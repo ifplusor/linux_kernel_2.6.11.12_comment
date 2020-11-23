@@ -1,1 +1,0 @@
-#undef CONFIG_ATA_OVER_ETH

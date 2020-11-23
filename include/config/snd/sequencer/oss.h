@@ -1,1 +1,0 @@
-#define CONFIG_SND_SEQUENCER_OSS 1
