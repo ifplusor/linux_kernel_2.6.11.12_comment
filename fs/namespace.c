@@ -40,7 +40,7 @@ static inline int sysfs_init(void)
  __cacheline_aligned_in_smp DEFINE_SPINLOCK(vfsmount_lock);
 
 /**
- * 文件系统描述符散列表。
+ * 已安装文件系统描述符散列表。
  */
 static struct list_head *mount_hashtable;
 static int hash_mask, hash_bits;
@@ -94,7 +94,7 @@ void free_vfsmnt(struct vfsmount *mnt)
  * the vfsmount struct.
  */
 /**
- * 在散列表中查找一个描述符并返回它的地址。
+ * 查找安装在指定目录项上的文件系统，返回它的描述符
  */
 struct vfsmount *lookup_mnt(struct vfsmount *mnt, struct dentry *dentry)
 {
@@ -109,6 +109,7 @@ struct vfsmount *lookup_mnt(struct vfsmount *mnt, struct dentry *dentry)
 		if (tmp == head)
 			break;
 		p = list_entry(tmp, struct vfsmount, mnt_hash);
+		/* 参考attach_mnt，mnt_hash链表使用头插法解决hash冲突 */
 		if (p->mnt_parent == mnt && p->mnt_mountpoint == dentry) {
 			found = mntget(p);
 			break;
@@ -761,7 +762,7 @@ static int do_remount(struct nameidata *nd, int flags, int mnt_flags,
 }
 
 /**
- * 移除安装点
+ * 移动安装点
  */
 static int do_move_mount(struct nameidata *nd, char *old_name)
 {
@@ -840,11 +841,10 @@ static int do_new_mount(struct nameidata *nd, char *type, int flags,
 		return -EINVAL;
 
 	/* we need capabilities... */
-	/* 检查权限 */
 	if (!capable(CAP_SYS_ADMIN))
 		return -EPERM;
 
-	/**
+	/*
 	 * do_kern_mount可能让当前进程睡眠。
 	 * 同时，另外一个进程可能在完全相同的安装点上安装文件系统或者甚至更改根文件系统。
 	 * 验证在该安装点上最近安装的文件系统是否仍然指向当前的namespace。如果不是，则返回错误码
@@ -1099,7 +1099,11 @@ int copy_mount_options(const void __user *data, unsigned long *where)
 	return 0;
 }
 
-/*
+/**
+ * 安装文件系统
+ *
+ * 在调用本函数前，sys_mount函数已经获得了大内核锁。
+*
  * Flags is a 32-bit value that allows up to 31 non-fs dependent flags to
  * be given to the mount() call (ie: read-only, no-dev, no-suid etc).
  *
@@ -1112,9 +1116,6 @@ int copy_mount_options(const void __user *data, unsigned long *where)
  * to have the magic value 0xC0ED, and this remained so until 2.4.0-test9.
  * Therefore, if this magic number is present, it carries no information
  * and must be discarded.
- */
-/**
- * 安装文件系统。在调用本函数前，sys_mount函数已经获得了大内核锁。
  */
 long do_mount(char * dev_name, char * dir_name, char *type_page,
 		  unsigned long flags, void *data_page)
@@ -1139,9 +1140,6 @@ long do_mount(char * dev_name, char * dir_name, char *type_page,
 		((char *)data_page)[PAGE_SIZE - 1] = 0;
 
 	/* Separate the per-mountpoint flags */
-	/**
-	 * 如果安装标志MS_NOSUID,MS_NODEV,MS_NOEXEC被设置，则清除它们，并在文件系统对象中设置相应的标志。
-	 */
 	if (flags & MS_NOSUID)
 		mnt_flags |= MNT_NOSUID;
 	if (flags & MS_NODEV)
@@ -1151,9 +1149,6 @@ long do_mount(char * dev_name, char * dir_name, char *type_page,
 	flags &= ~(MS_NOSUID|MS_NOEXEC|MS_NODEV|MS_ACTIVE);
 
 	/* ... and get the mountpoint */
-	/**
-	 * path_lookup查找安装点的路径名：该函数把路径名查找的结果存放在nameidata类型的局部变量nd中。
-	 */
 	retval = path_lookup(dir_name, LOOKUP_FOLLOW, &nd);
 	if (retval)
 		return retval;
@@ -1162,29 +1157,19 @@ long do_mount(char * dev_name, char * dir_name, char *type_page,
 	if (retval)
 		goto dput_out;
 
-	/**
-	 * 检查安装点必须要做的事情
-	 */
+	/* 检查安装点必须要做的事情 */
 	if (flags & MS_REMOUNT)
-		/**
-		 * MS_REMOUNT通常是改变超级块对象的s_flags字段的安装标志。以及已经安装文件系统对象mnt_flags字段的标志。
-		 */
+		/* MS_REMOUNT通常是改变超级块对象的s_flags字段的安装标志。以及已经安装文件系统对象mnt_flags字段的标志 */
 		retval = do_remount(&nd, flags & ~MS_REMOUNT, mnt_flags,
 				    data_page);
 	else if (flags & MS_BIND)
-		/**
-		 * MS_BIND标志表示用户要求在系统目录树的另一个安装点上文件或目录能够可见。
-		 */
+		/* MS_BIND标志表示用户要求在系统目录树的另一个安装点上文件或目录能够可见 */
 		retval = do_loopback(&nd, dev_name, flags & MS_REC);
 	else if (flags & MS_MOVE)
-		/**
-		 * MS_MOVE一般是表示用户改变已经安装文件系统的安装点。
-		 */
+		/* MS_MOVE一般是表示用户改变已经安装文件系统的安装点 */
 		retval = do_move_mount(&nd, dev_name);
 	else
-		/**
-		 * 一般的，用户是希望安装一个特殊文件系统或存放在磁盘分区中的普通文件系统。
-		 */
+		/* 一般的，用户是希望安装一个特殊文件系统或存放在磁盘分区中的普通文件系统 */
 		retval = do_new_mount(&nd, type_page, flags, mnt_flags,
 				      dev_name, data_page);
 dput_out:
@@ -1279,12 +1264,12 @@ out:
 }
 
 /**
- * mount一个文件系统。
- *		dev_name:文件系统所在的设备文件的路径名。如果没有则为NULL。
- *		dir_name:文件系统将安装于该目录中。
- *		type:文件系统的类型，必须是已经注册的文件系统的名字。
- *		flags:安装标志。安装标志如MS_RDONLY。
- *		data:与文件系统相关的数据结构的指针，可能为空。
+ * mount()系统调用
+ * @dev_name:	文件系统所在的设备文件的路径名。如果没有则为NULL。
+ * @dir_name:	文件系统将安装于该目录中。
+ * @type:	文件系统的类型，必须是已经注册的文件系统的名字。
+ * @flags:	安装标志。安装标志如MS_RDONLY。
+ * @data:	与文件系统相关的数据结构的指针，可能为空。
  */
 asmlinkage long sys_mount(char __user * dev_name, char __user * dir_name,
 			  char __user * type, unsigned long flags,
@@ -1296,9 +1281,7 @@ asmlinkage long sys_mount(char __user * dev_name, char __user * dir_name,
 	unsigned long dev_page;
 	char *dir_page;
 
-	/**
-	 * 把参数值拷贝到临时内核缓冲区。
-	 */
+	/* 把参数值拷贝到临时内核缓冲区 */
 	retval = copy_mount_options (type, &type_page);
 	if (retval < 0)
 		return retval;
@@ -1319,13 +1302,9 @@ asmlinkage long sys_mount(char __user * dev_name, char __user * dir_name,
 	if (retval < 0)
 		goto out3;
 
-	/**
-	 * 获取大内核锁。
-	 */
+	/* 获取大内核锁 */
 	lock_kernel();
-	/**
-	 * do_mount执行真正的安装操作。
-	 */
+	/* do_mount执行真正的安装操作 */
 	retval = do_mount((char*)dev_page, dir_page, (char*)type_page,
 			  flags, (void*)data_page);
 	unlock_kernel();

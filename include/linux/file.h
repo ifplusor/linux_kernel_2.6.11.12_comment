@@ -19,54 +19,18 @@
 /*
  * Open file table structure
  */
-/**
- * 进程当前打开的文件。
- */
 struct files_struct {
-		/**
-		 * 共享该表的进程数目。
-		 */
-        atomic_t count;
-		/**
-		 * 保护该表的读写自旋锁。
-		 */
-        spinlock_t file_lock;     /* Protects all the below members.  Nests inside tsk->alloc_lock */
-		/**
-		 * 文件对象的当前最大编号。
-		 */
-        int max_fds;
-		/**
-		 * 文件描述符的当前最大编号。
-		 */
-        int max_fdset;
-		/**
-		 * 上次分配的最大文件描述符加1.
-		 */
-        int next_fd;
-		/**
-		 * 本进程文件对象数组指针。
-		 */
-        struct file ** fd;      /* current fd array */
-		/**
-		 * exec时需要关闭的文件描述符指针。
-		 */
-        fd_set *close_on_exec;
-		/**
-		 * 打开文件描述符的指针。
-		 */
-        fd_set *open_fds;
-		/**
-		 * 执行exec时需要关闭的文件描述符的初始集合。
-		 */
-        fd_set close_on_exec_init;
-		/**
-		 * 文件描述符的初始集合。
-		 */
-        fd_set open_fds_init;
-		/**
-		 * 文件对象指针的初始化数组。
-		 */
-        struct file * fd_array[NR_OPEN_DEFAULT];
+        atomic_t count;			/* 共享该表的进程数目 */
+        spinlock_t file_lock;		/* Protects all the below members.  Nests inside tsk->alloc_lock */
+        int max_fds;			/* 文件对象的当前最大数目 */
+        int max_fdset;			/* 文件描述符的当前最大数目 */
+        int next_fd;			/* 所分配的最大文件描述符加1 */
+        struct file ** fd;      	/* current fd array */
+        fd_set *close_on_exec;		/* 执行exec()时需要关闭的文件描述符的集合 */
+        fd_set *open_fds;		/* 打开文件描述符的集合 */
+        fd_set close_on_exec_init;	/* 执行exec()时需要关闭的文件描述符的初始集合 */
+        fd_set open_fds_init;		/* 打开文件描述符的初始集合 */
+        struct file * fd_array[NR_OPEN_DEFAULT];	/* 文件对象指针的初始数组 */
 };
 
 extern void FASTCALL(__fput(struct file *));

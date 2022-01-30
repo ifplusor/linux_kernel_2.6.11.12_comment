@@ -81,95 +81,40 @@ struct dcookie_struct;
 #define DNAME_INLINE_LEN_MIN 36
 
 /**
- * 目录项对象描述符。它存放在名为dentry_cache的slab分配器高速缓存中。
+ * 目录项对象，存放目录项与对应文件进行链接的有关信息。
+ *
+ * 目录项对象在磁盘上没有对应的映像。目录项对象通过一个名为dentry_cache的slab高速缓存分配。
  */
 struct dentry {
-	/**
-	 * 目录项对象引用计数器
-	 */
-	atomic_t d_count;
-	/**
-	 * 目录项高速缓存标志:空闲状态，未使用状态，正在使用状态，负状态(如孤儿节点)
-	 */
-	unsigned int d_flags;		/* protected by d_lock */
-	/**
-	 * 保护该结构的自旋锁
-	 */
+	atomic_t d_count;		/* 引用计数器 */
+	unsigned int d_flags;		/* 目录项高速缓存标志，protected by d_lock */
 	spinlock_t d_lock;		/* per dentry lock */
-	/**
-	 * 与文件名关联的索引结点
-	 */
 	struct inode *d_inode;		/* Where the name belongs to - NULL is
 					 * negative */
 	/*
 	 * The next three fields are touched by __d_lookup.  Place them here
 	 * so they all fit in a 16-byte range, with 16-byte alignment.
 	 */
-	/**
-	 * 父目录的目录项对象
-	 */
 	struct dentry *d_parent;	/* parent directory */
-	/**
-	 * 文件名
-	 */
-	struct qstr d_name;
+	struct qstr d_name;		/* 文件名 */
 
-	/**
-	 * 用于未使用目录项链表的指针
-	 */
 	struct list_head d_lru;		/* LRU list */
-	/**
-	 * 对于目录而言，用于同一父目录中的目录项链表的指针
-	 */
 	struct list_head d_child;	/* child of parent list */
-	/**
-	 * 子目录项链表的头
-	 */
 	struct list_head d_subdirs;	/* our children */
-	/**
-	 * 用于与同一索引结点相关的目录项链表的指针
-	 */
 	struct list_head d_alias;	/* inode alias list */
-	/**
-	 * 由d_revalidate调用
-	 */
 	unsigned long d_time;		/* used by d_revalidate */
-	/**
-	 * 目录项方法
-	 */
-	struct dentry_operations *d_op;
-	/**
-	 * 文件的超级块对象
-	 */
+	struct dentry_operations *d_op;	/* 目录项方法 */
 	struct super_block *d_sb;	/* The root of the dentry tree */
-	/**
-	 * 依赖于文件系统的数据
-	 */
 	void *d_fsdata;			/* fs-specific data */
-	/**
-	 * 回收目录项对象时，由RCU描述符使用
-	 */
- 	struct rcu_head d_rcu;
-	/**
-	 * 指向内核配置文件使用的数据结构的指针
-	 */
+ 	struct rcu_head d_rcu;		/* 回收目录项对象时，由RCU描述符使用 */
 	struct dcookie_struct *d_cookie; /* cookie, if any */
-	/**
-	 * 指向散列表表项链表的指针
-	 */
 	struct hlist_node d_hash;	/* lookup hash list */	
-	/**
-	 * 对目录而言，用于记录安装该目录项的文件系统数的计数器。
-	 */
-	int d_mounted;
-	/**
-	 * 存放短文件名
-	 */
+	int d_mounted;			/* 对目录而言，用于记录安装该目录项的文件系统数的计数器 */
 	unsigned char d_iname[DNAME_INLINE_LEN_MIN];	/* small names */
 };
 
 /**
- * 目录项对象的操作方法
+ * 目录项操作
  */
 struct dentry_operations {
 	/**

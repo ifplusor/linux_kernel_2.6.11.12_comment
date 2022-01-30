@@ -612,7 +612,7 @@ static struct idr unnamed_dev_idr;
 static DEFINE_SPINLOCK(unnamed_dev_lock);/* protects the above */
 
 /**
- * 初始化特殊文件系统的超级。
+ * 初始化特殊文件系统的超级块
  */
 int set_anon_super(struct super_block *s, void *data)
 {
@@ -695,7 +695,7 @@ static void bdev_uevent(struct block_device *bdev, enum kobject_action action)
 }
 
 /**
- * 一般磁盘文件的get_sb函数。
+ * 一般磁盘文件系统的get_sb函数
  */
 struct super_block *get_sb_bdev(struct file_system_type *fs_type,
 	int flags, const char *dev_name, void *data,
@@ -780,7 +780,9 @@ void kill_block_super(struct super_block *sb)
 EXPORT_SYMBOL(kill_block_super);
 
 /**
- * 特殊文件系统的get_sb方法，如初始根文件系统。
+ * 特殊文件系统的get_sb方法
+ *
+ * 如初始根文件系统。
  */
 struct super_block *get_sb_nodev(struct file_system_type *fs_type,
 	int flags, void *data,
@@ -845,34 +847,25 @@ struct super_block *get_sb_single(struct file_system_type *fs_type,
 
 EXPORT_SYMBOL(get_sb_single);
 
-/**
- * 被do_new_mount调用.
- * 参数有:文件系统类型.安装标志及块设备名.
- * 这处理实际的安装操作并返回一个新安装文件系统描述符的地址.
+/*
+ * 被do_new_mount调用, 处理实际的安装操作并返回一个新安装文件系统描述符的地址.
+ * 参数: 文件系统类型名, 安装标志及块设备名.
  */
 struct vfsmount *
 do_kern_mount(const char *fstype, int flags, const char *name, void *data)
 {
-	/**
-	 * 获得文件系统名称对应的文件系统对象。
-	 */
-	struct file_system_type *type = get_fs_type(fstype);
+	struct file_system_type *type = get_fs_type(fstype); /* 获得文件系统名称对应的文件系统对象 */
 	struct super_block *sb = ERR_PTR(-ENOMEM);
 	struct vfsmount *mnt;
 	int error;
 	char *secdata = NULL;
 
-	/**
-	 * 错误的文件系统类型。
-	 */
-	if (!type)
+	if (!type) /* 错误的文件系统类型 */
 		return ERR_PTR(-ENODEV);
 
-	/**
-	 * 分配一个新的已安装文件系统的描述符
-	 */
+	/* 分配一个新的已安装文件系统的描述符 */
 	mnt = alloc_vfsmnt(name);
-	if (!mnt)/* 内存不足 */
+	if (!mnt) /* 内存不足 */
 		goto out;
 
 	if (data) {
@@ -889,9 +882,9 @@ do_kern_mount(const char *fstype, int flags, const char *name, void *data)
 		}
 	}
 
-	/**
+	/*
 	 * 调用文件系统的get_sb分配并初始化一个新的超级块。
-	 * 例如ext2的get_sb方法是ext2_get_sb。
+	 * 例如：ext2的get_sb方法是ext2_get_sb。
 	 */
 	sb = type->get_sb(type, flags, name, data);
 	if (IS_ERR(sb))
@@ -900,24 +893,17 @@ do_kern_mount(const char *fstype, int flags, const char *name, void *data)
  	if (error)
  		goto out_sb;
 	mnt->mnt_sb = sb;
-	/**
-	 * 将此字段初始化为与文件系统根目录对应的目录项对象的地址。并增加其引用计数值。
-	 */
+	/* 将此字段初始化为与文件系统根目录对应的目录项对象的地址，并增加其引用计数值 */
 	mnt->mnt_root = dget(sb->s_root);
 	mnt->mnt_mountpoint = sb->s_root;
-	/**
-	 * 将mnt_parent指向自身，表示它是一个独立的根。
-	 * 上层调用者可以修改它。
-	 */
+	/* 将mnt_parent指向自身，表示它是一个独立的根。上层调用者可以修改它 */
 	mnt->mnt_parent = mnt;
 	mnt->mnt_namespace = current->namespace;
 	up_write(&sb->s_umount);
 	put_filesystem(type);
 	return mnt;
 out_sb:
-	/**
-	 * 释放超级块的读写信号量。
-	 */
+	/* 释放超级块的读写信号量 */
 	up_write(&sb->s_umount);
 	deactivate_super(sb);
 	sb = ERR_PTR(error);

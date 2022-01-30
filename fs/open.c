@@ -736,7 +736,9 @@ asmlinkage long sys_fchown(unsigned int fd, uid_t user, gid_t group)
 	return error;
 }
 
-/*
+/**
+ * 打开文件
+ *
  * Note that while the flag value (low two bits) for sys_open means:
  *	00 - read-only
  *	01 - write-only
@@ -750,26 +752,19 @@ asmlinkage long sys_fchown(unsigned int fd, uid_t user, gid_t group)
  * for the internal routines (ie open_namei()/follow_link() etc). 00 is
  * used by symlinks.
  */
-/**
- * 打开文件
- */
 struct file *filp_open(const char * filename, int flags, int mode)
 {
 	int namei_flags, error;
 	struct nameidata nd;
 
-	/**
-	 * 根据传入的标志修改namei_flags标志
-	 */
+	/* 根据传入的flags设置namei_flags */
 	namei_flags = flags;
 	if ((namei_flags+1) & O_ACCMODE)
 		namei_flags++;
 	if (namei_flags & O_TRUNC)
 		namei_flags |= 2;
 
-	/**
-	 * 进行真正的打开的操作。
-	 */
+	/* 进行真正的打开的操作 */
 	error = open_namei(filename, namei_flags, mode, &nd);
 	if (!error)
 		return dentry_open(nd.dentry, nd.mnt, flags);
@@ -780,7 +775,7 @@ struct file *filp_open(const char * filename, int flags, int mode)
 EXPORT_SYMBOL(filp_open);
 
 /**
- * 打开一个目录项
+ * 打开目录项
  */
 struct file *dentry_open(struct dentry *dentry, struct vfsmount *mnt, int flags)
 {
@@ -789,64 +784,44 @@ struct file *dentry_open(struct dentry *dentry, struct vfsmount *mnt, int flags)
 	int error;
 
 	error = -ENFILE;
-	/**
-	 * 分配一个新的文件对象
-	 */
+	/* 分配一个新的文件对象 */
 	f = get_empty_filp();
 	if (!f)
 		goto cleanup_dentry;
-	/**
-	 * 根据open系统调用的访问模式标志初始化文件对象的f_flags和f_mode字段。
-	 */
+	/* 根据传递给open系统调用的访问模式标志初始化文件对象的f_flags和f_mode字段 */
 	f->f_flags = flags;
 	f->f_mode = ((flags+1) & O_ACCMODE) | FMODE_LSEEK | FMODE_PREAD | FMODE_PWRITE;
-	/**
-	 * 根据作为参数传递来的目录项对象地址和已经安装文件系统对象的地址
-	 * 初始化f_dentry和f_vfsmnt
-	 */
 	inode = dentry->d_inode;
 	if (f->f_mode & FMODE_WRITE) {
-		/**
-		 * 检查写权限
-		 */
+		/* 检查写权限 */
 		error = get_write_access(inode);
 		if (error)
 			goto cleanup_file;
 	}
 
 	f->f_mapping = inode->i_mapping;
+	/* 根据作为参数传递来的目录项对象和已经安装文件系统对象初始化f_dentry和f_vfsmnt字段 */
 	f->f_dentry = dentry;
 	f->f_vfsmnt = mnt;
 	f->f_pos = 0;
-	/**
-	 * 将f_op设置为相应索引结点对象i_fop字段的内容。为进一步的文件操作建立起对应的方法。
-	 */
+	/* 把f_op字段设置为相应索引节点对象i_fop字段的内容。为进一步的文件操作建立起对应的方法 */
 	f->f_op = fops_get(inode->i_fop);
-	/**
-	 * file_move将文件对象插入到文件系统超级块的s_files字段所指向的打开文件链表
-	 */
+	/* 将文件对象插入到文件系统超级块的s_files字段所指向的打开文件链表 */
 	file_move(f, &inode->i_sb->s_files);
 
-	/**
-	 * 如果文件系统的open方法被定义，则调用它。一般没有定义。
-	 */
-	if (f->f_op && f->f_op->open) {
+	if (f->f_op && f->f_op->open) { /* 有自定义的open方法 */
 		error = f->f_op->open(inode,f);
 		if (error)
 			goto cleanup_all;
 	}
 	f->f_flags &= ~(O_CREAT | O_EXCL | O_NOCTTY | O_TRUNC);
 
-	/**
-	 * 初始化预读的数据结构
-	 */
+	/* 初始化预读的数据结构 */
 	file_ra_state_init(&f->f_ra, f->f_mapping->host->i_mapping);
 
 	/* NB: we're sure to have correct a_ops only after f_op->open */
-	/**
-	 * 如果O_DIRECT被设置，就检查直接IO操作是否可以作用于文件
-	 */
-	if (f->f_flags & O_DIRECT) {
+	if (f->f_flags & O_DIRECT) { /* O_DIRECT被设置 */
+		/* 检查直接IO操作是否可以作用于文件 */
 		if (!f->f_mapping->a_ops || !f->f_mapping->a_ops->direct_IO) {
 			fput(f);
 			f = ERR_PTR(-EINVAL);
@@ -971,10 +946,10 @@ void fastcall fd_install(unsigned int fd, struct file * file)
 EXPORT_SYMBOL(fd_install);
 
 /**
- * open系统调用
- *	filename:要打开的文件名
- *	flags:访问模式
- *	mode:创建文件需要的许可权限。
+ * open()系统调用
+ * @filename:	要打开的文件名
+ * @flags:	访问模式
+ * @mode:	创建文件需要的许可权限。
  */
 asmlinkage long sys_open(const char __user * filename, int flags, int mode)
 {
@@ -984,27 +959,19 @@ asmlinkage long sys_open(const char __user * filename, int flags, int mode)
 #if BITS_PER_LONG != 32
 	flags |= O_LARGEFILE;
 #endif
-	/**
-	 * 从用户态获取文件名
-	 */
+	/* 从进程地址空间读取文件的路径名 */
 	tmp = getname(filename);
 	fd = PTR_ERR(tmp);
 	if (!IS_ERR(tmp)) {
-		/**
-		 * 获取一个未用文件句柄
-		 */
+		/* 分配一个未使用的文件句柄 */
 		fd = get_unused_fd();
 		if (fd >= 0) {
-			/**
-			 * 打开文件并返回file结构。
-			 */
+			/* 打开文件并返回file对象 */
 			struct file *f = filp_open(tmp, flags, mode);
 			error = PTR_ERR(f);
 			if (IS_ERR(f))
 				goto out_error;
-			/**
-			 * 将file指针赋给current->files->fd[fd]
-			 */
+			/* 将file对象关联到current->files->fd[fd] */
 			fd_install(fd, f);
 		}
 out:
@@ -1013,9 +980,7 @@ out:
 	return fd;
 
 out_error:
-	/**
-	 * 打开文件失败，释放文件句柄
-	 */
+	/* 打开文件失败，释放文件句柄 */
 	put_unused_fd(fd);
 	fd = error;
 	goto out;
@@ -1053,9 +1018,7 @@ int filp_close(struct file *filp, fl_owner_t id)
 		return retval;
 	}
 
-	/**
-	 * 调用文件的flush方法，只有少数驱动才会设置这个方法。
-	 */
+	/* 调用文件操作的flush方法。只有少数驱动才会设置这个方法 */
 	if (filp->f_op && filp->f_op->flush) {
 		int err = filp->f_op->flush(filp);
 		if (!retval)
@@ -1063,20 +1026,18 @@ int filp_close(struct file *filp, fl_owner_t id)
 	}
 
 	dnotify_flush(filp, id);
-	/**
-	 * 释放文件上的强制锁。
-	 */
+	/* 释放文件上的强制锁 */
 	locks_remove_posix(filp, id);
-	/**
-	 * 释放文件对象。
-	 */
+	/* 释放文件对象 */
 	fput(filp);
 	return retval;
 }
 
 EXPORT_SYMBOL(filp_close);
 
-/*
+/**
+ * close()系统调用
+ *
  * Careful here! We test whether the file pointer is NULL before
  * releasing the fd. This ensures that one clone task can't release
  * an fd while another clone is opening it.
@@ -1089,22 +1050,17 @@ asmlinkage long sys_close(unsigned int fd)
 	spin_lock(&files->file_lock);
 	if (fd >= files->max_fds)
 		goto out_unlock;
-	/**
-	 * 获得文件对象，如果为空，则返回错误码。
-	 */
+	/* 获得文件对象 */
 	filp = files->fd[fd];
 	if (!filp)
+		/* 如果为空，则返回错误码 */
 		goto out_unlock;
 	files->fd[fd] = NULL;
-	/**
-	 * 释放文件描述符，清除open_fds和close_on_exec中相应的位。
-	 */
+	/* 释放文件描述符，清除open_fds和close_on_exec中相应的位 */
 	FD_CLR(fd, files->close_on_exec);
 	__put_unused_fd(files, fd);
 	spin_unlock(&files->file_lock);
-	/**
-	 * 关闭文件
-	 */
+	/* 关闭文件 */
 	return filp_close(filp, files);
 
 out_unlock:

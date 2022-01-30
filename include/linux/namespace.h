@@ -5,11 +5,16 @@
 #include <linux/mount.h>
 #include <linux/sched.h>
 
+/**
+ * 命名空间，表示进程的已安装文件系统树。
+ *
+ * 进程安装或卸载文件系统时，仅修改它的命名空间。修改对共享同一命名空间的所有进程可见，也只对它们可见。
+ */
 struct namespace {
-	atomic_t		count;
-	struct vfsmount *	root;
-	struct list_head	list;
-	struct rw_semaphore	sem;
+	atomic_t		count;	/* 引用计数器 */
+	struct vfsmount *	root;	/* 命名空间根目录的已安装文件系统描述符 */
+	struct list_head	list;	/* 所有已安装文件系统描述符链表的头 */
+	struct rw_semaphore	sem;	/* 保护这个结构的读/写信号量 */
 };
 
 extern void umount_tree(struct vfsmount *);

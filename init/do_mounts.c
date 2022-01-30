@@ -454,6 +454,9 @@ out:
 	 * 移动rootfs文件系统根目录上的已安装文件系统的安装点。
 	 */
 	sys_mount(".", "/", NULL, MS_MOVE, NULL);
+	/**
+	 * 切换进程根目录到实际根文件系统
+	 */
 	sys_chroot(".");
 	security_sb_post_mountroot();
 	mount_devfs_fs ();

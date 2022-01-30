@@ -183,27 +183,23 @@ bad:
 #endif
 
 /**
- * 检查文件读写区域
+ * 检查文件读写区域是否有冲突的强制锁
  */
 int rw_verify_area(int read_write, struct file *file, loff_t *ppos, size_t count)
 {
 	struct inode *inode;
 	loff_t pos;
 
-	/**
-	 * 参数合法性检查
-	 */
+	/* 参数合法性检查 */
 	if (unlikely(count > file->f_maxcount))
 		goto Einval;
 	pos = *ppos;
-	/**
-	 * 溢出检查。
-	 */
+	/* 溢出检查 */
 	if (unlikely((pos < 0) || (loff_t) (pos + count) < 0))
 		goto Einval;
 
 	inode = file->f_dentry->d_inode;
-	if (inode->i_flock && MANDATORY_LOCK(inode))/* 锁冲突检查 */
+	if (inode->i_flock && MANDATORY_LOCK(inode)) /* 锁冲突检查 */
 		return locks_mandatory_area(read_write == READ ? FLOCK_VERIFY_READ : FLOCK_VERIFY_WRITE, inode, file, pos, count);
 	return 0;
 
@@ -232,40 +228,28 @@ ssize_t vfs_read(struct file *file, char __user *buf, size_t count, loff_t *pos)
 {
 	ssize_t ret;
 
-	/**
-	 * 检查文件读权限
-	 */
+	/* 检查文件读权限 */
 	if (!(file->f_mode & FMODE_READ))
 		return -EBADF;
 	if (!file->f_op || (!file->f_op->read && !file->f_op->aio_read))
 		return -EINVAL;
-	/**
-	 * 用户态地址不可写。
-	 */
+	/* 用户态地址不可写 */
 	if (unlikely(!access_ok(VERIFY_WRITE, buf, count)))
 		return -EFAULT;
 
-	/**
-	 * 对要访问的文件部分进行锁冲突检查。
-	 */
+	/* 对要访问的文件部分进行锁冲突检查 */
 	ret = rw_verify_area(READ, file, pos, count);
 	if (!ret) {
-		/**
-		 * 检查文件权限。
-		 */
+		/* 检查文件权限。 */
 		ret = security_file_permission (file, MAY_READ);
 		if (!ret) {
-			/**
-			 * 调用文件系统的read或者aio_read
-			 */
+			/* 调用文件系统的read或者aio_read */
 			if (file->f_op->read)
 				ret = file->f_op->read(file, buf, count, pos);
 			else
 				ret = do_sync_read(file, buf, count, pos);
 			if (ret > 0) {
-				/**
-				 * 目录事件通知。
-				 */
+				/* 目录事件通知 */
 				dnotify_parent(file->f_dentry, DN_ACCESS);
 				current->rchar += ret;
 			}
@@ -337,7 +321,7 @@ static inline void file_pos_write(struct file *file, loff_t pos)
 }
 
 /**
- * 读文件
+ * read()系统调用
  */
 asmlinkage ssize_t sys_read(unsigned int fd, char __user * buf, size_t count)
 {
@@ -345,15 +329,11 @@ asmlinkage ssize_t sys_read(unsigned int fd, char __user * buf, size_t count)
 	ssize_t ret = -EBADF;
 	int fput_needed;
 
-	/**
-	 * 将fd转化为file对象。
-	 */
+	/* 从fd获取相应的file对象 */
 	file = fget_light(fd, &fput_needed);
-	if (file) {/* 有效句柄 */
+	if (file) { /* 有效句柄 */
 		loff_t pos = file_pos_read(file);
-		/**
-		 * 执行真正的读
-		 */
+		/* 执行真正的读 */
 		ret = vfs_read(file, buf, count, &pos);
 		file_pos_write(file, pos);
 		fput_light(file, fput_needed);
@@ -363,6 +343,9 @@ asmlinkage ssize_t sys_read(unsigned int fd, char __user * buf, size_t count)
 }
 EXPORT_SYMBOL_GPL(sys_read);
 
+/**
+ * write()系统调用
+ */
 asmlinkage ssize_t sys_write(unsigned int fd, const char __user * buf, size_t count)
 {
 	struct file *file;
@@ -372,6 +355,7 @@ asmlinkage ssize_t sys_write(unsigned int fd, const char __user * buf, size_t co
 	file = fget_light(fd, &fput_needed);
 	if (file) {
 		loff_t pos = file_pos_read(file);
+		/* 执行真正的写 */
 		ret = vfs_write(file, buf, count, &pos);
 		file_pos_write(file, pos);
 		fput_light(file, fput_needed);

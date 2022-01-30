@@ -142,7 +142,7 @@ static inline void dentry_iput(struct dentry * dentry)
  * Real recursion would eat up our stack space.
  */
 
-/*
+/**
  * dput - release a dentry
  * @dentry: dentry to release 
  *
@@ -153,7 +153,6 @@ static inline void dentry_iput(struct dentry * dentry)
  *
  * no dcache lock, please.
  */
-
 void dput(struct dentry *dentry)
 {
 	if (!dentry)
@@ -162,11 +161,16 @@ void dput(struct dentry *dentry)
 repeat:
 	if (atomic_read(&dentry->d_count) == 1)
 		might_sleep();
+	/* 引用计数减1 */
 	if (!atomic_dec_and_lock(&dentry->d_count, &dcache_lock))
+		/* 引用计数不为0，直接返回 */
 		return;
 
+	/* NOTE: atomic_dec_and_lock中已经对dcache_lock加锁 */
 	spin_lock(&dentry->d_lock);
+	/* dcache_lock和dentry加锁后，二次确认引用计数 */
 	if (atomic_read(&dentry->d_count)) {
+		/* 引用计数不为0，直接返回 */
 		spin_unlock(&dentry->d_lock);
 		spin_unlock(&dcache_lock);
 		return;
@@ -210,6 +214,7 @@ kill_it: {
 		dentry_iput(dentry);
 		parent = dentry->d_parent;
 		d_free(dentry);
+		/* 尾递归 */
 		if (dentry == parent)
 			return;
 		dentry = parent;
@@ -772,7 +777,6 @@ static int shrink_dcache_memory(int nr, unsigned int gfp_mask)
  * available. On a success the dentry is returned. The name passed in is
  * copied and the copy passed in may be reused after this call.
  */
- 
 struct dentry *d_alloc(struct dentry * parent, const struct qstr *name)
 {
 	struct dentry *dentry;
@@ -780,9 +784,12 @@ struct dentry *d_alloc(struct dentry * parent, const struct qstr *name)
 
 	dentry = kmem_cache_alloc(dentry_cache, GFP_KERNEL); 
 	if (!dentry)
+		/* 内存不足 */
 		return NULL;
 
+	/* 复制文件名 */
 	if (name->len > DNAME_INLINE_LEN-1) {
+		/* dentry上的预分配空间不足，重新申请大小合适的内存 */
 		dname = kmalloc(name->len + 1, GFP_KERNEL);
 		if (!dname) {
 			kmem_cache_free(dentry_cache, dentry); 
@@ -1083,11 +1090,6 @@ struct dentry *d_splice_alias(struct inode *inode, struct dentry *dentry)
  *
  * d_lookup() is protected against the concurrent renames in some unrelated
  * directory using the seqlockt_t rename_lock.
- */
-
-/**
- * 在散列表中查找给定的父目录项对象和文件名。
- * 这里采用的锁是顺序锁,__d_lookup与它类似，但是没有锁保护
  */
 struct dentry * d_lookup(struct dentry * parent, struct qstr * name)
 {

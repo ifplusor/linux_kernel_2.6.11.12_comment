@@ -79,83 +79,29 @@ extern int dir_notify_enable;
 #define SEL_EX		4
 
 /* public flags for file_system_type */
-/**
- * 这种类型的文件系统必须位于物理磁盘上。
- */
-#define FS_REQUIRES_DEV 1 
-/**
- * 使用二进制安装数据?
- */
-#define FS_BINARY_MOUNTDATA 2
-/**
- * 需要检查"."和".."，用于NFS
- */
+#define FS_REQUIRES_DEV 1	/* 这种类型的文件系统必须位于物理磁盘上 */
+#define FS_BINARY_MOUNTDATA 2	/* 文件系统使用二进制安装数据 */
 #define FS_REVAL_DOT	16384	/* Check the paths ".", ".." for staleness */
-/**
- * 重命令就是移动，用于NFS
- */
 #define FS_ODD_RENAME	32768	/* Temporary stuff; will go away as soon
 				  * as nfs_rename() will be cleaned up
 				  */
 /*
  * These are the fs-independent mount-flags: up to 32 flags are supported
  */
-/**
- * 只读mount
- */
 #define MS_RDONLY	 1	/* Mount read-only */
-/**
- * 禁止setuid和setgid标志。
- */
 #define MS_NOSUID	 2	/* Ignore suid and sgid bits */
-/**
- * 禁止访问设备文件。
- */
 #define MS_NODEV	 4	/* Disallow access to device special files */
-/**
- * 不允许文件执行。
- */
 #define MS_NOEXEC	 8	/* Disallow program execution */
-/**
- * 文件和目录上的写操作是即时的。在mount时指定了sync参数。
- */
 #define MS_SYNCHRONOUS	16	/* Writes are synced at once */
-/**
- * 重新安装文件系统。
- */
 #define MS_REMOUNT	32	/* Alter flags of a mounted FS */
-/**
- * 允许强制加锁。
- */
 #define MS_MANDLOCK	64	/* Allow mandatory locks on an FS */
-/**
- * 目录上的写操作是即时的。
- */
 #define MS_DIRSYNC	128	/* Directory modifications are synchronous */
-/**
- * 不更新文件访问时间。
- */
 #define MS_NOATIME	1024	/* Do not update access times. */
-/**
- * 不更新目录访问时间。
- */
 #define MS_NODIRATIME	2048	/* Do not update directory access times */
-/**
- * 创建一个"绑定安装"。这样一个文件或目录在系统的另外一个点上可以被看见。参见mount命令的__bind选项。
- */
-#define MS_BIND		4096
-/**
- * 自动把一个已安装文件系统移动到另外一个安装点。参见mount命令的__move选项。
- */
-#define MS_MOVE		8192
-/**
- * 为目录子树递归地创建"绑定安装"
- */
-#define MS_REC		16384
-/**
- * 出错时产生详细的内核消息。
- */
-#define MS_VERBOSE	32768
+#define MS_BIND		4096	/* 创建一个"绑定安装"，这就使得一个文件或目录在系统目录树的另外一个点上可以看得见（mount命令的__bind选项） */
+#define MS_MOVE		8192	/* 自动把一个已安装文件系统移动到另外一个安装点（mount命令的__move选项） */
+#define MS_REC		16384	/* 为目录子树递归地创建"绑定安装" */
+#define MS_VERBOSE	32768	/* 出错时产生详细的内核消息。 */
 #define MS_POSIXACL	(1<<16)	/* VFS does not apply the umask */
 #define MS_ACTIVE	(1<<30)
 #define MS_NOUSER	(1<<31)
@@ -651,207 +597,74 @@ static inline int mapping_writably_mapped(struct address_space *mapping)
 #endif
 
 /**
- * 内核用该结构在内部表示一个文件。它与file不同。file表示的的文件描述符。
- * 对单个文件，可能会有许多个表示打开的文件描述符的filep结构，但是它们都指向单个inode结构。
+ * 索引节点对象，存放关于具体文件的一般信息。
+ *
+ * 索引节点对文件是唯一的，并且随文件的存在而存在。
+ * 对基于磁盘的文件系统，索引节点对象通常对应于存放在磁盘上的文件控制块。
+ * 每个索引节点对象都有一个索引节点号，这个节点号唯一地标识文件系统中的文件。
  */
 struct inode {
-	/**
-	 * 通过此字段将对象放入哈希表。
-	 */
-	struct hlist_node	i_hash;
-	/**
-	 * 通过此字段将队列链入不同状态的链表中。
-	 */
-	struct list_head	i_list;
-	/**
-	 * 通过此字段将其链入到超级块的inode链表中。
-	 */
-	struct list_head	i_sb_list;
-	/**
-	 * 引用索引节点的目录项对象链表头。
-	 */
-	struct list_head	i_dentry;
-	/**
-	 * 索引节点编号。
-	 */
-	unsigned long		i_ino;
-	/**
-	 * 引用计数器。
-	 */
-	atomic_t		i_count;
-	/**
-	 * 文件类型与访问权限。
-	 */
-	umode_t			i_mode;
-	/**
-	 * 硬链接数目。
-	 */
-	unsigned int		i_nlink;
-	/**
-	 * 所有者ID
-	 */
-	uid_t			i_uid;
-	/**
-	 * 所有者组标识符。
-	 */
-	gid_t			i_gid;
-	/**
-	 * 对表示设备文件的inode结构，该字段包含了真正的设备编号。
-	 */
-	dev_t			i_rdev;
-	/**
-	 * 文件的字节数。
-	 */
-	loff_t			i_size;
-	/**
-	 * 上次访问文件的时间。
-	 */
-	struct timespec		i_atime;
-	/**
-	 * 上次与文件的时间。
-	 */
-	struct timespec		i_mtime;
-	/**
-	 * 上次修改索引节点的时间。
-	 */
-	struct timespec		i_ctime;
-	/**
-	 * 块的位数。
-	 */
-	unsigned int		i_blkbits;
-	/**
-	 * 块的字节数。
-	 */
-	unsigned long		i_blksize;
-	/**
-	 * 版本号，每次使用后递增。
-	 */
-	unsigned long		i_version;
-	/**
-	 * 文件的块数。
-	 */
-	unsigned long		i_blocks;
-	/**
-	 * 文件最后一个块的字节数。
-	 */
-	unsigned short          i_bytes;
-	/**
-	 * 非0表示文件是一个套接字。
-	 */
-	unsigned char		i_sock;
-	/**
-	 * 保护索引节点某些字段的自旋锁。
-	 */
-	spinlock_t		i_lock;	/* i_blocks, i_bytes, maybe i_size */
-	/**
-	 * 保护索引节点的信号量。
-	 */
-	struct semaphore	i_sem;
-	/**
-	 * 在直接IO文件操作中避免出现竞争条件的读写信号量。
-	 */
-	struct rw_semaphore	i_alloc_sem;
-	/**
-	 * 索引节点的操作。
-	 */
-	struct inode_operations	*i_op;
-	/**
-	 * 缺省文件操作。
-	 */
-	struct file_operations	*i_fop;	/* former ->i_op->default_file_ops */
-	/**
-	 * inode所在的超级块。
-	 */
-	struct super_block	*i_sb;
-	/**
-	 * 文件锁链表,通过此字段将文件上的所有锁链接成一个单链表。
-	 */
-	struct file_lock	*i_flock;
-	/**
-	 * 指向address_space对象的指针。
-	 */
-	struct address_space	*i_mapping;
-	/**
-	 * 文件的address_space对象。
-	 */
-	struct address_space	i_data;
+	struct hlist_node	i_hash;		/* 用于散列链表的指针 */
+	struct list_head	i_list;		/* 用于描述索引节点当前状态的链表的指针 */
+	struct list_head	i_sb_list;	/* 用于超级块的索引节点链表的指针 */
+	struct list_head	i_dentry;	/* 引用索引节点的目录项对象链表头 */
+	unsigned long		i_ino;		/* 索引节点号 */
+	atomic_t		i_count;	/* 引用计数器 */
+	umode_t			i_mode;		/* 文件类型与访问权限 */
+	unsigned int		i_nlink;	/* 硬链接数目 */
+	uid_t			i_uid;		/* 所有者标识符 */
+	gid_t			i_gid;		/* 组标识符 */
+	dev_t			i_rdev;		/* 实设备标识符，该字段包含了真正的设备编号 */
+	loff_t			i_size;		/* 文件的字节数 */
+	struct timespec		i_atime;	/* 上次访问文件的时间 */
+	struct timespec		i_mtime;	/* 上次写文件的时间 */
+	struct timespec		i_ctime;	/* 上次修改索引节点的时间 */
+	unsigned int		i_blkbits;	/* 块的位数 */
+	unsigned long		i_blksize;	/* 块的字节数 */
+	unsigned long		i_version;	/* 版本号，每次使用后递增 */
+	unsigned long		i_blocks;	/* 文件的块数 */
+	unsigned short          i_bytes;	/* 文件最后一个块的字节数 */
+	unsigned char		i_sock;		/* 非0表示文件是一个套接字 */
+	spinlock_t		i_lock;		/* 保护索引节点某些字段的自旋锁。
+						 * i_blocks, i_bytes, maybe i_size */
+	struct semaphore	i_sem;		/* 索引节点信号量 */
+	struct rw_semaphore	i_alloc_sem;	/* 在直接I/O文件操作中避免出现竞争条件的读/写信号量 */
+	struct inode_operations	*i_op;		/* 索引节点的操作 */
+	struct file_operations	*i_fop;		/* 缺省文件操作。
+						 * former ->i_op->default_file_ops */
+	struct super_block	*i_sb;		/* 超级块对象 */
+	struct file_lock	*i_flock;	/* 文件锁链表 */
+	struct address_space	*i_mapping;	/* 指向address_space对象的指针 */
+	struct address_space	i_data;		/* 文件的address_space对象 */
 #ifdef CONFIG_QUOTA
-	/**
-	 * 索引节点的磁盘限额。
-	 */
-	struct dquot		*i_dquot[MAXQUOTAS];
+	struct dquot		*i_dquot[MAXQUOTAS];	/* 索引节点磁盘限额 */
 #endif
 	/* These three should probably be a union */
-	/**
-	 * 用于具体的字符或块设备的索引节点链表指针。
-	 */
-	struct list_head	i_devices;
-	/**
-	 * 如果内核是一个管道则非0
-	 */
-	struct pipe_inode_info	*i_pipe;
-	/**
-	 * 指向块设备驱动程序的指针。
-	 */
-	struct block_device	*i_bdev;
-	/**
-	 * 表示字符设备的内部数据结构。当inode指向一个字符设备文件时，该字段包含了指向struct cdev结构的指针。
-	 */
-	struct cdev		*i_cdev;
-	/**
-	 * 次设备号索引。
-	 */
-	int			i_cindex;
+	struct list_head	i_devices;	/* 用于具体的字符或块设备的索引节点链表指针 */
+	struct pipe_inode_info	*i_pipe;	/* 如果文件是一个管道则使用它 */
+	struct block_device	*i_bdev;	/* 指向块设备驱动程序的指针 */
+	struct cdev		*i_cdev;	/* 指向字符设备驱动程序的指针 */
+	int			i_cindex;	/* 拥有一组次设备号的设备文件的索引 */
 
-	/**
-	 * 索引节点版本号。由某些文件系统使用。
-	 */
-	__u32			i_generation;
+	__u32			i_generation;	/* 索引节点版本号（由某些文件系统使用） */
 
 #ifdef CONFIG_DNOTIFY
-	/**
-	 * 目录通知事件掩码。
-	 */
 	unsigned long		i_dnotify_mask; /* Directory notify events */
-	/**
-	 * 用于目录通知。
-	 */
 	struct dnotify_struct	*i_dnotify; /* for directory notifications */
 #endif
 
-	/**
-	 * 索引节点状态标志。
-	 */
-	unsigned long		i_state;
-	/**
-	 * 索引节点弄脏的时间，以jiffies为单位。
-	 */
+	unsigned long		i_state;	/* 索引节点的状态标志 */
 	unsigned long		dirtied_when;	/* jiffies of first dirtying */
 
-	/**
-	 * 文件系统的安装标志。
-	 */
-	unsigned int		i_flags;
+	unsigned int		i_flags;	/* 文件系统的安装标志 */
 
-	/**
-	 * 用于写进程的引用计数。
-	 */
-	atomic_t		i_writecount;
-	/**
-	 * 索引节点安全结构。
-	 */
-	void			*i_security;
-	/**
-	 * 文件系统私有数据指针。
-	 */
+	atomic_t		i_writecount;	/* 用于写进程的引用计数 */
+	void			*i_security;	/* 索引节点安全结构 */
 	union {
-		void		*generic_ip;
+		void		*generic_ip;	/* 指向（文件系统）私有数据指针 */
 	} u;
 #ifdef __NEED_I_SIZE_ORDERED
-	/**
-	 * SMP系统为i_size字段获取一致性时使用的顺序计数器。
-	 */
-	seqcount_t		i_size_seqcount;
+	seqcount_t		i_size_seqcount; /* SMP系统为i_size字段获取一致性时使用的顺序计数器 */
 #endif
 };
 
@@ -992,98 +805,37 @@ struct file_ra_state {
 #define RA_FLAG_INCACHE 0x02	/* file is already in cache */
 
 /**
- * 代表一个打开的文件。由内核在open时创建。当文件的所有实例都被关闭后，才释放该结构。
+ * 文件对象，存放打开文件与进程之间进行交互的有关信息。
+ *
+ * 文件对象是在文件被打开时创建的，通过一个名为filp的slab高速缓存分配。文件对象在磁盘上没有对应的映像。
  */
 struct file {
-	/**
-	 * 用于通用文件对象链表的指针。
-	 */
-	struct list_head	f_list;
-	/**
-	 * 文件对应的目录项结构。除了用filp->f_dentry->d_inode的方式来访问索引节点结构之外，设备驱动程序的开发者们一般无需关心dentry结构。
-	 */
-	struct dentry		*f_dentry;
-	/**
-	 * 含有该文件的已经安装的文件系统。
-	 */
-	struct vfsmount         *f_vfsmnt;
-	/**
-	 * 与文件相关的操作。内核在执行open操作时，对这个指针赋值，以后需要处理这些操作时就读取这个指针。
-	 * 不能为了方便而保存起来。也就是说，可以在任何需要的时候修改文件的关联操作。即"方法重载"。
-	 */
-	struct file_operations	*f_op;
-	/**
-	 * 文件对象的引用计数。
-	 * 指引用文件对象的进程数。内核也可能增加此计数。
-	 */
-	atomic_t		f_count;
-	/**
-	 * 文件标志。如O_RONLY、O_NONBLOCK和O_SYNC。为了检查用户请求是否非阻塞式的操作，驱动程序需要检查O_NONBLOCK标志，其他标志较少用到。
-	 * 检查读写权限应该查看f_mode而不是f_flags。
-	 */
-	unsigned int 		f_flags;
-	/** 
-	 * 文件模式。FMODE_READ和FMODE_WRITE分别表示读写权限。
-	 */
-	mode_t			f_mode;
-	/**
-	 * 网络写操作的错误码。
-	 */
-	int			f_error;
-	/**
-	 * 当前的读写位置。它是一个64位数。如果驱动程序需要知道文件中的当前位置，可以读取这个值但是不要去修改它。
-	 * read/write会使用它们接收到的最后那个指针参数来更新这一位置。
-	 */
-	loff_t			f_pos;
-	/**
-	 * 通过信号进行邋IO进程通知的数据。
-	 */
-	struct fown_struct	f_owner;
-	/**
-	 * 用户的UID和GID.
-	 */
-	unsigned int		f_uid, f_gid;
-	/**
-	 * 文件的预读状态。
-	 */
-	struct file_ra_state	f_ra;
+	struct list_head	f_list;		/* 用于通用文件对象链表的指针 */
+	struct dentry		*f_dentry;	/* 文件相关的目录项对象 */
+	struct vfsmount         *f_vfsmnt;	/* 含有该文件的已经安装文件系统 */
+	struct file_operations	*f_op;		/* 文件操作表 */
+	atomic_t		f_count;	/* 引用计数器 */
+	unsigned int 		f_flags;	/* 打开文件时所指定的标志 */
+	mode_t			f_mode;		/* 进程的访问模式 */
+	int			f_error;	/* 网络写操作的错误码 */
+	loff_t			f_pos;		/* 当前的文件位移量 */
+	struct fown_struct	f_owner;	/* 通过信号进行I/O事件通知的数据 */
+	unsigned int		f_uid, f_gid;	/* 用户的UID和GID */
+	struct file_ra_state	f_ra;		/* 文件预读状态 */
 
-	/**
-	 * 一次操作能读写的最大字节数。当前设置为2^31-1
-	 */
-	size_t			f_maxcount;
-	/**
-	 * 版本号，每次使用后递增。
-	 */
-	unsigned long		f_version;
-	/**
-	 * 文件对象的安全结构指针。
-	 */
-	void			*f_security;
+	size_t			f_maxcount;	/* 一次单一的操作能读或写的最大字节数（当前设置为2^31-1） */
+	unsigned long		f_version;	/* 版本号，每次使用后递增 */
+	void			*f_security;	/* 文件对象的安全结构 */
 
 	/* needed for tty driver, and maybe others */
-	/**
-	 * open系统调用在调用驱动程序的open方法前将这个指针置为NULL。驱动程序可以将这个字段用于任何目的或者忽略这个字段。
-	 * 驱动程序可以用这个字段指向已分配的数据，但是一定要在内核销毁file结构前在release方法中释放内存。
-	 * 它是跨系统调用时保存状态的非常有用的资源。
-	 */
-	void			*private_data;
+	void			*private_data;	/* 特定文件系统或驱动程序所需的数据 */
 
 #ifdef CONFIG_EPOLL
 	/* Used by fs/eventpoll.c to link all the hooks to this file */
-	/**
-	 * 文件的事件轮询等待者链表头。
-	 */
-	struct list_head	f_ep_links;
-	/**
-	 * 保护f_ep_links的自旋锁。
-	 */
-	spinlock_t		f_ep_lock;
+	struct list_head	f_ep_links;	/* 文件的事件轮询等待者链表头 */
+	spinlock_t		f_ep_lock;	/* 保护f_ep_links的自旋锁。 */
 #endif /* #ifdef CONFIG_EPOLL */
-	/**
-	 * 指向文件地址空间的对象。
-	 */
-	struct address_space	*f_mapping;
+	struct address_space	*f_mapping;	/* 文件地址空间对象 */
 };
 extern spinlock_t files_lock;
 #define file_list_lock() spin_lock(&files_lock);
@@ -1295,171 +1047,68 @@ extern spinlock_t sb_lock;
 
 #define sb_entry(list)	list_entry((list), struct super_block, s_list)
 #define S_BIAS (1<<30)
+
 /**
- * 超级块对象
+ * 超级块对象，存放已安装文件系统的有关信息。
+ *
+ * 对基于磁盘的文件系统，超级块对象通常对应于存放在磁盘上的文件系统控制块。
  */
 struct super_block {
-	/**
-	 * 指向超级块链表的指针
-	 */
-	struct list_head	s_list;		/* Keep this first */
-	/**
-	 * 设备标识符
-	 */
-	dev_t			s_dev;		/* search index; _not_ kdev_t */
-	/**
-	 * 以字节为单位的块大小
-	 */
-	unsigned long		s_blocksize;
-	/**
-	 * 基本块设备驱动程序中的以字节为单位的块大小。
-	 */
-	unsigned long		s_old_blocksize;
-	/**
-	 * 以位为单位的块大小
-	 */
-	unsigned char		s_blocksize_bits;
-	/**
-	 * 脏标志
-	 */
-	unsigned char		s_dirt;
-	/**
-	 * 文件的最大长度
-	 */
+	struct list_head	s_list;		/* 指向超级块链表的指针。
+						 * Keep this first */
+	dev_t			s_dev;		/* 设备标识符。
+						 * search index; _not_ kdev_t */
+	unsigned long		s_blocksize;	/* 以字节为单位的块大小 */
+	unsigned long		s_old_blocksize;	/* 基本块设备驱动程序中提到的以字节为单位的块大小 */
+	unsigned char		s_blocksize_bits;	/* 以位为单位的块大小 */
+	unsigned char		s_dirt;		/* 修改（脏）标志 */
 	unsigned long long	s_maxbytes;	/* Max file size */
-	/**
-	 * 文件系统类型。
-	 */
-	struct file_system_type	*s_type;
-	/**
-	 * 超级块方法
-	 */
-	struct super_operations	*s_op;
-	/**
-	 * 磁盘限额处理方法
-	 */
-	struct dquot_operations	*dq_op;
-	/**
-	 * 磁盘限额管理方法
-	 */
- 	struct quotactl_ops	*s_qcop;
-	/**
-	 * NFS使用的输出操作
-	 */
-	struct export_operations *s_export_op;
-	/**
-	 * 安装标志
-	 */
-	unsigned long		s_flags;
-	/**
-	 * 文件系统的魔数
-	 */
-	unsigned long		s_magic;
-	/**
-	 * 文件系统根目录的目录项
-	 */
-	struct dentry		*s_root;
-	/**
-	 * 卸载时使用的信号量
-	 */
-	struct rw_semaphore	s_umount;
-	/**
-	 * 保护超级块使用的信号量
-	 */
-	struct semaphore	s_lock;
-	/**
-	 * 引用计数
-	 */
-	int			s_count;
-	/**
-	 * 对超级块的索引节点进行同步的标志
-	 */
-	int			s_syncing;
-	/**
-	 * 对超级块的已安装文件系统进行同步的的标志
-	 */
-	int			s_need_sync_fs;
-	/**
-	 * 次引用计数。
-	 */
-	atomic_t		s_active;
-	/**
-	 * 超级块安全数据结构
-	 */
-	void                    *s_security;
-	/**
-	 * 超级块扩展属性结构的指针
-	 */
-	struct xattr_handler	**s_xattr;
+	struct file_system_type	*s_type;	/* 文件系统类型 */
+	struct super_operations	*s_op;		/* 超级块方法 */
+	struct dquot_operations	*dq_op;		/* 磁盘限额处理方法 */
+ 	struct quotactl_ops	*s_qcop;	/* 磁盘限额管理方法 */
+	struct export_operations *s_export_op;	/* 网络文件系统（NFS）使用的输出操作 */
+	unsigned long		s_flags;	/* 安装标志 */
+	unsigned long		s_magic;	/* 文件系统的魔数 */
+	struct dentry		*s_root;	/* 文件系统根目录的目录项对象 */
+	struct rw_semaphore	s_umount;	/* 卸载所用的信号量 */
+	struct semaphore	s_lock;		/* 超级块信号量 */
+	int			s_count;	/* 引用计数器 */
+	int			s_syncing;	/* 表示对超级块的索引节点进行同步的标志 */
+	int			s_need_sync_fs;	/* 对超级块的已安装文件系统进行同步的标志 */
+	atomic_t		s_active;	/* 次级引用计数器 */
+	void                    *s_security;	/* 超级块安全数据结构 */
+	struct xattr_handler	**s_xattr;	/* 超级块扩展属性结构 */
 
-	/**
-	 * 所有索引节点链表
-	 */
 	struct list_head	s_inodes;	/* all inodes */
-	/**
-	 * 脏索引节点链表
-	 */
 	struct list_head	s_dirty;	/* dirty inodes */
-	/**
-	 * 等等写入磁盘的索引节点链表
-	 */
 	struct list_head	s_io;		/* parked for writeback */
-	/**
-	 * 匿名目录项链表，用于NFS
-	 */
 	struct hlist_head	s_anon;		/* anonymous dentries for (nfs) exporting */
-	/**
-	 * 文件对象链表
-	 */
-	struct list_head	s_files;
+	struct list_head	s_files;	/* 文件对象的链表 */
 
-	/**
-	 * 指向块设备驱动程序描述符的指针
-	 */
-	struct block_device	*s_bdev;
-	/**
-	 * 相同文件类型的超级块对象链表。
-	 */
-	struct list_head	s_instances;
-	/**
-	 * 磁盘限额的描述符
-	 */
+	struct block_device	*s_bdev;	/* 指向块设备驱动程序描述符的指针 */
+	struct list_head	s_instances;	/* 用于给定文件类型的超级块对象链表的指针 */
 	struct quota_info	s_dquot;	/* Diskquota specific options */
 	
-	/**
-	 * 冻结文件系统时使用的标志，用于强制设置一致性状态。
-	 */
-	int			s_frozen;
-	/**
-	 * 等待解冻的队列。
-	 */
-	wait_queue_head_t	s_wait_unfrozen;
+	int			s_frozen;	/* 冻结文件系统时使用的标志（强制设置一致性状态） */
+	wait_queue_head_t	s_wait_unfrozen;	/* 进程挂起的等待队列，直到文件系统被解冻 */
 
-	/**
-	 * 包含超级块的块设备名称
-	 */
-	char s_id[32];				/* Informational name */
+	char s_id[32];				/* Informational name
+						 * 包含超级块的块设备名称 */
 
-	/**
-	 * 指向特定文件系统的超级块信息的指针。各文件系统自定义。
-	 * 对ext2来说，是指向一个ext2_sb_info类型的结构。
-	 */
-	void 			*s_fs_info;	/* Filesystem private info */
+	void 			*s_fs_info;	/* Filesystem private info
+						 * 指向特定文件系统的超级块信息的指针。各文件系统自定义。
+						 * 对ext2来说，是指向一个ext2_sb_info类型的结构 */
 
 	/*
 	 * The next field is for VFS *only*. No filesystems have any business
 	 * even looking at it. You had been warned.
 	 */
-	/**
-	 * 当VFS通过目录重命名文件时使用的信号量。
-	 */
-	struct semaphore s_vfs_rename_sem;	/* Kludge */
+	struct semaphore s_vfs_rename_sem;	/* Kludge
+						 * 当VFS通过目录重命名文件时使用的信号量 */
 
 	/* Granuality of c/m/atime in ns.
 	   Cannot be worse than a second */
-	/**
-	 * c/m/atime的时间戳粒度。
-	 */
 	u32		   s_time_gran;
 };
 
@@ -1610,13 +1259,12 @@ typedef int (*read_actor_t)(read_descriptor_t *, struct page *, unsigned long, u
 #define HAVE_COMPAT_IOCTL 1
 #define HAVE_UNLOCKED_IOCTL 1
 
-/*
+/**
+ * 文件操作
+ *
  * NOTE:
  * read, write, poll, fsync, readv, writev, unlocked_ioctl and compat_ioctl
  * can be called without the big kernel lock held in all filesystems.
- */
-/**
- * 文件操作选项
  */
 struct file_operations {
 	/**
@@ -1837,12 +1485,11 @@ extern ssize_t vfs_readv(struct file *, const struct iovec __user *,
 extern ssize_t vfs_writev(struct file *, const struct iovec __user *,
 		unsigned long, loff_t *);
 
-/*
+/**
+ * 超级块操作
+ *
  * NOTE: write_inode, delete_inode, clear_inode, put_inode can be called
  * without the big kernel lock held in all filesystems.
- */
-/**
- * 超级块操作方法
  */
 struct super_operations {
 	/**
@@ -1938,27 +1585,12 @@ struct super_operations {
 #define I_DIRTY_DATASYNC	2 /* Data-related inode changes pending */
 #define I_DIRTY_PAGES		4 /* Data-related inode changes pending */
 #define __I_LOCK		3
-/**
- * 索引节点对象处理IO传送中。
- */
-#define I_LOCK			(1 << __I_LOCK)
-/**
- * 索引节点正在被释放。
- */
-#define I_FREEING		16
-/**
- * 索引节点对象的内容不再有意义。
- */
-#define I_CLEAR			32
-/**
- * 索引节点对象已经分配，但是还没有从磁盘中读取数据。
- */
-#define I_NEW			64
+#define I_LOCK			(1 << __I_LOCK)	/* 索引节点对象处理IO传送中 */
+#define I_FREEING		16		/* 索引节点正在被释放 */
+#define I_CLEAR			32		/* 索引节点对象的内容不再有意义 */
+#define I_NEW			64		/* 索引节点对象已经分配，但是还没有从磁盘中读取数据 */
 
-/**
- * 判断索引节点是否为脏。
- */
-#define I_DIRTY (I_DIRTY_SYNC | I_DIRTY_DATASYNC | I_DIRTY_PAGES)
+#define I_DIRTY (I_DIRTY_SYNC | I_DIRTY_DATASYNC | I_DIRTY_PAGES)	/* 判断索引节点是否为脏 */
 
 extern void __mark_inode_dirty(struct inode *, int);
 static inline void mark_inode_dirty(struct inode *inode)
@@ -2093,38 +1725,21 @@ find_exported_dentry(struct super_block *sb, void *obj, void *parent,
 		     void *context);
 
 /**
- * 对内核支持的每一种文件系统，存在一个这样的结构对其进行描述。
+ * 文件系统类型
+ *
+ * 每个注册的文件系统，都用一个file_system_type对象来表示。
  */
 struct file_system_type {
-	/**
-	 * 文件系统类型的名称 
-	 */
-	const char *name;
-	/**
-	 * 此文件系统类型的属性 
-	 */
-	int fs_flags;
-	/**
-	 * 函数指针，当安装此类型的文件系统时，就由VFS调用此例程从设备上将此文件系统的superblock读入内存中
-	 */	
+	const char *name;	/* 文件系统名 */
+	int fs_flags;		/* 文件系统类型标志 */
+	/* 读超级块的方法 */	
 	struct super_block *(*get_sb) (struct file_system_type *, int,
 				       const char *, void *);
-	/**
-	 * 删除超级块的方法。
-	 */
+	/* 删除超级块的方法 */
 	void (*kill_sb) (struct super_block *);
-	/**
-	 * 指向实现文件系统的模块的指针。
-	 */
-	struct module *owner;
-	/**
-	 * 下一个文件系统指针。
-	 */
-	struct file_system_type * next;
-	/**
-	 * 具有相同文件系统类型的超级块对象链表的头。
-	 */
-	struct list_head fs_supers;
+	struct module *owner;		/* 指向实现文件系统的模块的指针 */
+	struct file_system_type * next;	/* 指向文件系统类型链表中下一个元素的指针 */
+	struct list_head fs_supers;	/* 具有相同文件系统类型的超级块对象链表的头 */
 };
 
 struct super_block *get_sb_bdev(struct file_system_type *fs_type,

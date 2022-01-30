@@ -1044,7 +1044,7 @@ static int ext2_statfs (struct super_block * sb, struct kstatfs * buf)
 static struct super_block *ext2_get_sb(struct file_system_type *fs_type,
 	int flags, const char *dev_name, void *data)
 {
-	/**
+	/*
 	 * get_sb_bdev分配并初始化一个适合于磁盘文件系统的超级块。
 	 * ext2_fill_super从ext2磁盘分区读取磁盘超级块。
 	 * 对特殊文件系统来说，有一个get_sb_pseudo，get_sb_single及get_sb_nodev。

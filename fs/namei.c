@@ -379,16 +379,15 @@ ok:
 	return security_inode_permission(inode, MAY_EXEC, nd);
 }
 
-/*
+/**
+ * 读取磁盘并搜索特定名称的目录项
+ *
  * This is called when everything else fails, and we actually have
  * to go to the low-level filesystem to find out what we should do..
  *
  * We get the directory semaphore, and after getting that we also
  * make sure that nobody added the entry to the dcache in the meantime..
  * SMP-safe
- */
-/**
- * 从磁盘中读取目录项，并搜索特定名称的目录项
  */
 static struct dentry * real_lookup(struct dentry * parent, struct qstr * name, struct nameidata *nd)
 {
@@ -411,10 +410,9 @@ static struct dentry * real_lookup(struct dentry * parent, struct qstr * name, s
 	 *
 	 * so doing d_lookup() (with seqlock), instead of lockfree __d_lookup
 	 */
-	/* 在获取锁的过程中，目录项可能已经被读到缓存中，再次从目录项缓存中搜索 */
 	result = d_lookup(parent, name);
-	if (!result) {/* 目录项缓存中仍然不存在 */
-		/* 分配并初始化目录项缓存 */
+	if (!result) {
+		/* 目录项缓存中仍然不存在 */
 		struct dentry * dentry = d_alloc(parent, name);
 		result = ERR_PTR(-ENOMEM);
 		if (dentry) {
@@ -425,7 +423,8 @@ static struct dentry * real_lookup(struct dentry * parent, struct qstr * name, s
 			else
 				result = dentry;
 		}
-		up(&dir->i_sem);/* 释放锁并返回 */
+		/* 释放锁并返回 */
+		up(&dir->i_sem);
 		return result;
 	}
 
@@ -433,12 +432,11 @@ static struct dentry * real_lookup(struct dentry * parent, struct qstr * name, s
 	 * Uhhuh! Nasty case: the cache was re-populated while
 	 * we waited on the semaphore. Need to revalidate.
 	 */
-	/* 缓存中已经存在目录项了，释放锁 */
 	up(&dir->i_sem);
-	/* 文件系统要求对目录进行校验 */
 	if (result->d_op && result->d_op->d_revalidate) {
-		/* 如果校验不成功，说明目录项已经失效，返回失败 */
+		/* 文件系统要求对目录进行校验 */
 		if (!result->d_op->d_revalidate(result, nd) && !d_invalidate(result)) {
+			/* 如果校验不成功，说明目录项已经失效，返回失败 */
 			dput(result);
 			result = ERR_PTR(-ENOENT);
 		}
@@ -474,27 +472,17 @@ static inline int __vfs_follow_link(struct nameidata *nd, const char *link)
 	if (IS_ERR(link))
 		goto fail;
 
-	/**
-	 * 检查符号链接是否以'/'开头
-	 */
+	/* 检查符号链接路径名是否以'/'开头 */
 	if (*link == '/') {
-		/**
-		 * 是以'/'开头，已经找到一个绝对路径了，因此没有必要保留前一个路径的任何信息。
-		 * path_release就会释放前一个查找步骤产生的对象，nameidata数据结构中的路径信息被清空了
-		 * 一切从头开始。
-		 */
+		/* 符号链接路径名是一个绝对路径，因此没有必要在内存中保留前一个路径的任何信息 */
+		/* 释放前一个查找步骤产生的对象 */
 		path_release(nd);
-		/**
-		 * 设置nameidata的dentry和mnt字段，以使它们指向当前进程的根目录
-		 * walk_init_root就做这个事情。
-		 */
+		/* 使nd的dentry和mnt字段指向当前进程的根目录 */
 		if (!walk_init_root(link, nd))
 			/* weird __emul_prefix() stuff did it */
 			goto out;
 	}
-	/**
-	 * link_path_walk解析符号链的路径名,并返回res
-	 */
+	/* 解析符号链接的路径名 */
 	res = link_path_walk(link, nd);
 out:
 	if (nd->depth || res || nd->last_type!=LAST_NORM)
@@ -517,89 +505,67 @@ fail:
 	return PTR_ERR(link);
 }
 
-/**
- * 符号链接查找
- */
+/* __do_follow_link是do_follow_link的实现 */
 static inline int __do_follow_link(struct dentry *dentry, struct nameidata *nd)
 {
 	int error;
 
-	/**
-	 * 更新索引结点的访问时间。
-	 */
+	/* 更新索引节点的访问时间 */
 	touch_atime(nd->mnt, dentry);
 	nd_set_link(nd, NULL);
-	/**
-	 * 调用文件系统相关的函数实现的follow_link方法。
-	 * 它读取存放在符号链接索引结点中的路径名，并把这个路径名保存在nd->save_names数组的项中
-	 */
+	/* 读取存放在符号链接索引节点中的路径名，并把这个路径名保存在nd->save_names数组的合适项中 */
 	error = dentry->d_inode->i_op->follow_link(dentry, nd);
 	if (!error) {
-		/* nd_get_link获得follow_link读取的字符串 */
+		/* 获得follow_link读取的字符串 */
 		char *s = nd_get_link(nd);
 		if (s)
-		 	/**
+		 	/*
 		 	 * 如果符号链接的第一个字符是"/"，则在内存中不用保存前一个路径的信息。并将结果指向当前进程的根目录。
 		 	 * 否则调用link_path_walk解析路径名。
 		 	 */
 			error = __vfs_follow_link(nd, s);
-		/**
-		 * 如果有put_link方法，就执行它，释放由follow_link方法分配的临时数据结构。
-		 */
-		if (dentry->d_inode->i_op->put_link)
+		if (dentry->d_inode->i_op->put_link) /* 有自定义的put_link方法 */
+			/* 调用put_link方法，释放由follow_link方法分配的临时数据结构 */
 			dentry->d_inode->i_op->put_link(dentry, nd);
 	}
 
 	return error;
 }
 
-/*
+/**
+ * 跟踪符号链接
+ * @dentry:	符号链接的目录项
+ * @nd:		nameidata
+ *
  * This limits recursive symlink follows to 8, while
  * limiting consecutive symlinks to 40.
  *
  * Without that kind of total limit, nasty chains of consecutive
  * symlinks can cause almost arbitrarily long lookups. 
  */
-/**
- * 被link_path_walk调用。link_path_walk用于查找符号链接
- * dentry是符号链接的地址。nd是nameidata结构的址址。
- */
 static inline int do_follow_link(struct dentry *dentry, struct nameidata *nd)
 {
 	int err = -ELOOP;
-	/**
-	 * 由于符号链接可能嵌套，如果不判断一下，可能在此形成递归调用。死循环。
-	 */
+	/* 防止无限递归 */
 	if (current->link_count >= MAX_NESTED_LINKS)
 		goto loop;
 	if (current->total_link_count >= 40)
 		goto loop;
 	BUG_ON(nd->depth >= MAX_NESTED_LINKS);
-	/**
-	 * 判断一下抢占
-	 */
+	/* 判断一下抢占 */
 	cond_resched();
 	err = security_inode_follow_link(dentry, nd);
 	if (err)
 		goto loop;
-	/**
-	 * 计数，请参见前面的注释。
-	 */
+	/* 计数 */
 	current->link_count++;
 	current->total_link_count++;
 	nd->depth++;
-	/**
-	 * __do_follow_link是一个递归调用，
-	 */
+	/* 跟踪符号链接 */
 	err = __do_follow_link(dentry, nd);
-	/**
-	 * link_count是__do_follow_link嵌套次数，调用完后减回来。
-	 */
-	current->link_count--;
-	/**
-	 * 本次查找的递归次数。
-	 */
-	nd->depth--;
+	/* 减计数 */
+	current->link_count--; /* link_count是do_follow_link嵌套次数 */
+	nd->depth--; /* 本次查找的递归次数 */
 	return err;
 loop:
 	path_release(nd);
@@ -626,20 +592,23 @@ int follow_up(struct vfsmount **mnt, struct dentry **dentry)
 	return 1;
 }
 
-/* no need for dcache_lock, as serialization is taken care in
+/**
+ * 跟踪挂载点
+ *
+ * no need for dcache_lock, as serialization is taken care in
  * namespace.c
  */
-/* 找到挂载点 */
 static int follow_mount(struct vfsmount **mnt, struct dentry **dentry)
 {
 	int res = 0;
-	/* 直到当前路径不再是一个挂载点后再退出 */
+	/* 直到当前目录项不再是一个挂载点后再退出 */
 	while (d_mountpoint(*dentry)) {
-		/* 在哈希表中查找当前路径的文件系统装载实例 */
+		/* 在哈希表中查找挂载到当前目录项的文件系统 */
 		struct vfsmount *mounted = lookup_mnt(*mnt, *dentry);
-		if (!mounted)/* 未加载文件系统，退出 */
+		if (!mounted)
+			/* 未加载文件系统，退出 */
 			break;
-		/* 将文件系统的根目录作为当前路径，继续查找 */
+		/* 将文件系统的根目录作为当前目录项，继续查找 */
 		mntput(*mnt);
 		*mnt = mounted;
 		dput(*dentry);
@@ -672,7 +641,9 @@ int follow_down(struct vfsmount **mnt, struct dentry **dentry)
 	return __follow_down(mnt,dentry);
 }
  
-/* 在搜索路径时，处理".."返回到上级路径 */
+/**
+ * 跟踪“..”，返回父目录
+ */
 static inline void follow_dotdot(struct vfsmount **mnt, struct dentry **dentry)
 {
 	while(1) {
@@ -680,16 +651,16 @@ static inline void follow_dotdot(struct vfsmount **mnt, struct dentry **dentry)
 		struct dentry *old = *dentry;
 
                 read_lock(&current->fs->lock);
-		if (*dentry == current->fs->root &&/* 已经到达当前进程的根目录，退出 */
+		if (*dentry == current->fs->root &&
 		    *mnt == current->fs->rootmnt) {
+			/* 1. 已经到达当前进程的根目录，退出 */
                         read_unlock(&current->fs->lock);
 			break;
 		}
                 read_unlock(&current->fs->lock);
 		spin_lock(&dcache_lock);
-		/* 当前目录还不是所在目录的根目录 */
 		if (*dentry != (*mnt)->mnt_root) {
-			/* 返回到上一级目录 */
+			/* 4. 当前目录还不是所在文件系统的根目录，返回到上一级目录 */
 			*dentry = dget((*dentry)->d_parent);
 			spin_unlock(&dcache_lock);
 			dput(old);
@@ -700,10 +671,12 @@ static inline void follow_dotdot(struct vfsmount **mnt, struct dentry **dentry)
 		spin_lock(&vfsmount_lock);
 		/* 转到挂载文件系统的上级目录 */
 		parent = (*mnt)->mnt_parent;
-		if (parent == *mnt) {/* 上级挂载目录已经是根目录了 */
+		if (parent == *mnt) {
+			/* 2. 所在文件系统没有被安装在其它文件系统之上，无法向上追踪！！！ */
 			spin_unlock(&vfsmount_lock);
 			break;
 		}
+		/* 3. 所在文件系统被安装在其它文件系统之上，切换文件系统并继续 */
 		mntget(parent);
 		/* 目录项变为当前文件系统的挂载点 */
 		*dentry = dget((*mnt)->mnt_mountpoint);
@@ -712,16 +685,16 @@ static inline void follow_dotdot(struct vfsmount **mnt, struct dentry **dentry)
 		mntput(*mnt);
 		*mnt = parent;
 	}
-	/* 最后找到的目录可能是一个挂载点，调用follow_mount跟踪到最后一次挂载的目录点 */
+	/* 最后找到的目录项可能是一个挂载点，跟踪到最后一次挂载的文件系统 */
 	follow_mount(mnt, dentry);
 }
 
-/* 内核中表示的路径 */
+/*
+ * 路径在内核中的表示
+ */
 struct path {
-	/* 文件系统中装载对象 */
-	struct vfsmount *mnt;
-	/* 目录项列表 */
-	struct dentry *dentry;
+	struct vfsmount *mnt;	/* 已安文件系统 */
+	struct dentry *dentry;	/* 目录项 */
 };
 
 /*
@@ -729,23 +702,18 @@ struct path {
  *  small and for now I'd prefer to have fast path as straight as possible.
  *  It _is_ time-critical.
  */
-/**
- * 得到与给定的父目录和文件名相关的目录项对象.
- */
 static int do_lookup(struct nameidata *nd, struct qstr *name,
 		     struct path *path)
 {
 	struct vfsmount *mnt = nd->mnt;
-	/**
-	 * __d_lookup在目录项高速缓存中搜索分量的目录项对象.
-	 */
-	struct dentry *dentry = __d_lookup(nd->dentry, name);
+	struct dentry *dentry = __d_lookup(nd->dentry, name); /* __d_lookup在目录项高速缓存中搜索分量的目录项对象 */
 
-	/* 在目录项缓存中没有找到，则需要从磁盘上读取目录项后查找 */
 	if (!dentry)
+		/* 在目录项缓存中没有找到，则需要从磁盘上读取目录项后查找 */
 		goto need_lookup;
-	/* 在目录项缓存中搜索到目录项，但是文件系统要求对缓存中的目录项进行校验 */
+	/* 在目录项缓存中搜索到目录项 */
 	if (dentry->d_op && dentry->d_op->d_revalidate)
+		/* 文件系统要求对缓存中的目录项进行校验 */
 		goto need_revalidate;
 done:
 	path->mnt = mnt;
@@ -753,10 +721,9 @@ done:
 	return 0;
 
 need_lookup:
-	/**
-	 * 没有在目录项高速缓存中找到目录项对象,就调用real_lookup
-	 * real_lookup执行索引节点的lookup方法从磁盘读取目录,创建一个新的目录项对象并把它插入到目录项高速缓存中.
-	 * 然后创建一个新的索引节点,并将它插入到索引节点高速缓存中.
+	/*
+	 * real_lookup执行索引节点的lookup方法从磁盘读取目录，创建一个新的目录项对象并把它插入到目录项高速缓存中，
+	 * 然后创建一个新的索引节点对象并将它插入到索引节点高速缓存中。
 	 */
 	dentry = real_lookup(nd->dentry, name, nd);
 	if (IS_ERR(dentry))
@@ -764,7 +731,6 @@ need_lookup:
 	goto done;
 
 need_revalidate:
-	/* 校验成功 */
 	if (dentry->d_op->d_revalidate(dentry, nd))
 		goto done;
 	if (d_invalidate(dentry))
@@ -776,29 +742,28 @@ fail:
 	return PTR_ERR(dentry);
 }
 
-/*
+/**
  * Name resolution.
+ * @name:	路径名
+ * @nd:		传入基准目录和flags，输出结果
  *
  * This is the basic name resolution function, turning a pathname
  * into the final dentry.
  *
  * We expect 'base' to be positive and a directory.
  */
-/**
- * 真正的路径查找实现。
- */
 int fastcall link_path_walk(const char * name, struct nameidata *nd)
 {
-	struct path next;
+	struct path next; /* 路径分量的查找结果。next是相对于nd的 */
 	struct inode *inode;
 	int err;
-	/* 查找标志 */
-	unsigned int lookup_flags = nd->flags;
+	unsigned int lookup_flags = nd->flags; /* 查找标志 */
 
-	/* 多个/仅代表一个/ */
+	/* 跳过路径名第一个分量前的任何'/' */
 	while (*name=='/')
 		name++;
-	if (!*name)/* 查找根目录或者空目录，结果已经保存在nd中了，直接返回 */
+	if (!*name)
+		/* 查找根目录或者空目录，结果已经保存在nd中了，直接返回 */
 		goto return_reval;
 
 	/* 每次在inode所在的目录下进行查找 */
@@ -810,30 +775,24 @@ int fastcall link_path_walk(const char * name, struct nameidata *nd)
 		lookup_flags = LOOKUP_FOLLOW;
 
 	/* At this point we know we have a real path component. */
-	/**
-	 * 循环处理每一个路径分量。
-	 */
+	/* 循环处理每一个路径分量 */
 	for(;;) {
 		unsigned long hash;
 		struct qstr this;
 		unsigned int c;
 
-		/**
-		 * 只有目录有可执行权限，才能被检索。
-		 */
+		/* 只有目录有可执行权限，才能被检索 */
 		err = exec_permission_lite(inode, nd);
 		if (err == -EAGAIN) { 
 			err = permission(inode, MAY_EXEC, nd);
 		}
- 		if (err)/* 权限错误 */
+ 		if (err) /* 权限错误 */
 			break;
 
 		this.name = name;
 		c = *(const unsigned char *)name;
 
-		/**
-		 * 计算散列值
-		 */
+		/* 计算散列值 */
 		hash = init_name_hash();
 		do {
 			name++;
@@ -844,16 +803,13 @@ int fastcall link_path_walk(const char * name, struct nameidata *nd)
 		this.hash = end_name_hash(hash);
 
 		/* remove trailing slashes? */
-		/**
-		 * 最后一个分量，并且没有以"/"结束，是一个文件。
-		 */
 		if (!c)
+			/* 最后一个分量，并且没有以"/"结束 */
 			goto last_component;
-		/**
-		 * 如果分量以"/"结束，退出。
-		 */
+		/* 跳过'/'后的任何尾部'/' */
 		while (*++name == '/');
 		if (!*name)
+			/* 最后一个分量，并且以"/"结束 */
 			goto last_with_slashes;
 
 		/*
@@ -861,57 +817,48 @@ int fastcall link_path_walk(const char * name, struct nameidata *nd)
 		 * to be able to know about the current root directory and
 		 * parent relationships.
 		 */
-		if (this.name[0] == '.') switch (this.len) {/* 分量是一个"." */
-			default:/* 不是"."，开始处理该分量。 */
+		if (this.name[0] == '.') switch (this.len) { /* 分量以"."开始 */
+			default:
 				break;
 			case 2:	
 				if (this.name[1] != '.')
 					break;
+				/* “..”，回到父目录，继续处理下一个分量 */
 				follow_dotdot(&nd->mnt, &nd->dentry);
-				inode = nd->dentry->d_inode;/* dentry就是上一层目录，转回上级目录并继续。 */
+				inode = nd->dentry->d_inode;
 				/* fallthrough */
-			case 1:/* 当前目录，继续处理下一个分量。 */
+			case 1:
+				/* “.”，当前目录，继续处理下一个分量 */
 				continue;
 		}
 		/*
 		 * See if the low-level filesystem might want
 		 * to use its own hash..
 		 */
-		/**
-		 * 如果文件系统允许目录缓存，并且有自定义的散列函数，则计算它的散列值。
-		 */
 		if (nd->dentry->d_op && nd->dentry->d_op->d_hash) {
 			err = nd->dentry->d_op->d_hash(nd->dentry, &this);
 			if (err < 0)
 				break;
 		}
-		nd->flags |= LOOKUP_CONTINUE;
+		nd->flags |= LOOKUP_CONTINUE; /* 表示还有下一个分量要分析 */
 		/* This does the actual lookups.. */
-		/**
-		 * 在当前目录中搜索下一个分量。
-		 */
 		err = do_lookup(nd, &this, &next);
 		if (err)
 			break;
 		/* Check mountpoints.. */
-		/**
-		 * 检查刚解析的分量是否对应一个文件系统的安装点。如果是，则更新next的mnt和dentry
-		 */
 		follow_mount(&next.mnt, &next.dentry);
 
 		err = -ENOENT;
 		inode = next.dentry->d_inode;
-		if (!inode)/* 目录不存在 */
+		if (!inode)
+			/* 目录项不存在，返回-ENOENT */
 			goto out_dput;
 		err = -ENOTDIR; 
 		if (!inode->i_op)
 			goto out_dput;
 
-		if (inode->i_op->follow_link) {/* 刚解析的分量是一个符号链接 */
+		if (inode->i_op->follow_link) { /* 分量是一个符号链接 */
 			mntget(next.mnt);
-			/**
-			 * 处理符号链接。
-			 */
 			err = do_follow_link(next.dentry, nd);
 			dput(next.dentry);
 			mntput(next.mnt);
@@ -929,62 +876,58 @@ int fastcall link_path_walk(const char * name, struct nameidata *nd)
 			nd->mnt = next.mnt;
 			nd->dentry = next.dentry;
 		}
-		err = -ENOTDIR; 
-		/**
-		 * 刚解析的分量是否指向一个目录。如果没有，则返回错误。因为中间目录分量必须是一个目录。
-		 */
+		err = -ENOTDIR;
 		if (!inode->i_op->lookup)
+			/*
+			 * 分量没有指向一个目录，返回-ENOTDIR。
+			 * 因为分量位于原路径名的中间，中间分量必须是一个目录。
+			 */
 			break;
 		continue;
 		/* here ends the main loop */
 
 last_with_slashes:
-		/**
-		 * 文件名最后一个分量是"/"，设置LOOKUP_FOLLOW和LOOKUP_DIRECTORY标志。后面的函数会强制将最后一个分量作为目录。
+		/*
+		 * 路径名最后一个分量以"/"结束，设置LOOKUP_FOLLOW和LOOKUP_DIRECTORY标志。
+		 * 后面的函数会强制将最后一个分量看作目录。
 		 */
 		lookup_flags |= LOOKUP_FOLLOW | LOOKUP_DIRECTORY;
 last_component:
-		/**
-		 * 最后一个分量。清除LOOKUP_CONTINUE
-		 */
-		nd->flags &= ~LOOKUP_CONTINUE;
-		if (lookup_flags & LOOKUP_PARENT)/* 查找父路径名 */
+		/* 最后一个分量 */
+		nd->flags &= ~LOOKUP_CONTINUE; /* 清除LOOKUP_CONTINUE标志 */
+		if (lookup_flags & LOOKUP_PARENT)
+			/* 查找父路径名 */
 			goto lookup_parent;
 		if (this.name[0] == '.') switch (this.len) {
 			default:
 				break;
 			case 2:	
-				if (this.name[1] != '.')/* 不是".."，应当是正常的文件名 */
+				if (this.name[1] != '.')
+					/* 不是".."，应当是正常的文件名 */
 					break;
-				/* ".."，尝试回到父目录,如果当前是文件系统根目录并且根目录没有绑到其他目录，则返回根目录，否则向上移动 */
+				/*
+				 * ".."，尝试回到父目录。
+				 * 如果当前分量是文件系统根目录并且根目录且没有绑到其他目录，则返回根目录；否则向上移动
+				 */
 				follow_dotdot(&nd->mnt, &nd->dentry);
 				inode = nd->dentry->d_inode;
 				/* fallthrough */
-			case 1:/* 最后一个字符是"."，无错误直接返回。返回结果的dentry和mnt字段指向路径名中倒数第二个分量对应的对象 */
+			case 1: /* 最后一个字符是"." */
+				/* 直接返回。返回结果的dentry和mnt字段指向路径名中倒数第二个分量对应的对象 */
 				goto return_reval;
 		}
-		/**
-		 * 最后一个分量是文件或目录名，先试图有文件系统的哈希方法重新计算哈希值。
-		 */
 		if (nd->dentry->d_op && nd->dentry->d_op->d_hash) {
 			err = nd->dentry->d_op->d_hash(nd->dentry, &this);
 			if (err < 0)
 				break;
 		}
-		/**
-		 * 在目录高速缓存或者磁盘上搜索文件。
-		 */
 		err = do_lookup(nd, &this, &next);
 		if (err)
 			break;
-		/**
-		 * 检查最后一个分量是否为某一个文件系统的安装点。
-		 * 如果是，则把next变量更新为最上层文件系统的根目录对应的目录项对其和已经安装文件系统对象的地址。
-		 */
 		follow_mount(&next.mnt, &next.dentry);
 		inode = next.dentry->d_inode;
-		if ((lookup_flags & LOOKUP_FOLLOW)/* 需要检查最后一个分量的符号链接 */
-		    && inode && inode->i_op && inode->i_op->follow_link) {/* 有自定义的follow_link方法 */
+		if ((lookup_flags & LOOKUP_FOLLOW) /* 需要检查最后一个分量的符号链接 */
+		    && inode && inode->i_op && inode->i_op->follow_link) { /* 且有自定义的follow_link方法 */
 			mntget(next.mnt);
 			err = do_follow_link(next.dentry, nd);
 			dput(next.dentry);
@@ -992,52 +935,42 @@ last_component:
 			if (err)
 				goto return_err;
 			inode = nd->dentry->d_inode;
-		} else {/* 不需要符号链接查找 */
-			/**
-			 * 释放dentry的引用，因为要将最后查找的分量设置为返回结果的dentry
-			 */
+		} else {
 			dput(nd->dentry);
+			/* 将最后查找的分量设置为返回结果的dentry */
 			nd->mnt = next.mnt;
 			nd->dentry = next.dentry;
 		}
-		/**
-		 * 检查最后一个分量对应的d_inode是否为空，如果是，则说明对应的目录不存在，返回错误。
-		 */
 		err = -ENOENT;
 		if (!inode)
+			/* 目录项不存在，返回-ENOENT */
 			break;
-		/**
-		 * LOOKUP_DIRECTORY标志要求最后一个分量必须是目录
-		 */
 		if (lookup_flags & LOOKUP_DIRECTORY) {
+			/* LOOKUP_DIRECTORY标志要求最后一个分量必须是目录 */
 			err = -ENOTDIR; 
-			/**
-			 * 没有lookup说明这不是一个目录，返回ENOTDIR错误。
-			 */
 			if (!inode->i_op || !inode->i_op->lookup)
+				/* 没有自定义的lookup方法，说明这不是一个目录，返回-ENOTDIR */
 				break;
 		}
 		goto return_base;
 lookup_parent:
-		/**
-		 * 将last设置为最后一个分量
-		 */
+		/* 将last设置为最后一个分量名 */
 		nd->last = this;
-		/**
-		 * 如果最后一个分量不是"."或者".."，那么最后一个分量默认就是LAST_NORM
-		 */
+		/* 如果最后一个分量不是"."或者".."，那么最后一个分量默认就是LAST_NORM */
 		nd->last_type = LAST_NORM;
 		if (this.name[0] != '.')
 			goto return_base;
-		/**
-		 * 对"."和".."进行特殊处理
-		 */
+		/* 对"."和".."进行特殊处理 */
 		if (this.len == 1)
 			nd->last_type = LAST_DOT;
 		else if (this.len == 2 && this.name[1] == '.')
 			nd->last_type = LAST_DOTDOT;
 		else
-			goto return_base;/* 由于没有对最后一个分量进行解释，因此返回的dentry就是父目录 */
+			/*
+			 * 由于最后一个分量没有被解释，因此nd的dentry和mnt字段
+			 * 指向最后一个分量所在的目录对应的对象
+			 */
+			goto return_base;
 return_reval:
 		/*
 		 * We bypassed the ordinary revalidation routines.
@@ -1134,30 +1067,24 @@ set_it:
 
 /**
  * 查找路径名
- *		name:要查找的文件路径名
- *		flags:表示怎样访问查找的文件标志，如LOOKUP_FOLLOW
- *		nd:存放查找的结果。
+ * @name:	要查找的文件路径名
+ * @flags:	表示怎样访问查找的文件标志，如LOOKUP_FOLLOW
+ * @nd:		存放查找的结果
  */
 int fastcall path_lookup(const char *name, unsigned int flags, struct nameidata *nd)
 {
 	int retval;
 
-	/**
-	 * 在结果中设置初值。
-	 */
+	/* 初始化nd参数 */
 	nd->last_type = LAST_ROOT; /* if there are only slashes... */
 	nd->flags = flags;
 	nd->depth = 0;
 
-	/**
-	 * 获取fs的lock自旋锁。
-	 */
+	/* 获取fs的lock自旋锁。 */
 	read_lock(&current->fs->lock);
-	if (*name=='/') {/* 从根目录开始查找 */
+	if (*name=='/') {
+		/* 从根目录开始查找。 */
 		if (current->fs->altroot && !(nd->flags & LOOKUP_NOALT)) {
-			/**
-			 * 从根目录开始查找。
-			 */
 			nd->mnt = mntget(current->fs->altrootmnt);
 			nd->dentry = dget(current->fs->altroot);
 			read_unlock(&current->fs->lock);
@@ -1168,23 +1095,15 @@ int fastcall path_lookup(const char *name, unsigned int flags, struct nameidata 
 		nd->mnt = mntget(current->fs->rootmnt);
 		nd->dentry = dget(current->fs->root);
 	} else {
-		/**
-		 * 从当前目录开始查找。
-		 */
+		/* 从当前工作目录开始查找。 */
 		nd->mnt = mntget(current->fs->pwdmnt);
 		nd->dentry = dget(current->fs->pwd);
 	}
-	/**
-	 * 此时已经获得了初始目录项的引用，可以释放自旋锁了。
-	 */
+	/* 此时已经获得了初始目录项的引用，可以释放自旋锁了。 */
 	read_unlock(&current->fs->lock);
-	/**
-	 * 当前进程的符号链接查找计数进行初始化。
-	 */
+	/* 初始化当前进程的符号链接查找计数 */
 	current->total_link_count = 0;
-	/**
-	 * link_path_walk执行真正的路径查找。
-	 */
+	/* link_path_walk执行真正的路径查找 */
 	retval = link_path_walk(name, nd);
 	if (unlikely(current->audit_context
 		     && nd && nd->dentry && nd->dentry->d_inode))
@@ -1579,7 +1498,8 @@ int open_namei(const char * pathname, int flag, int mode, struct nameidata *nd)
 	/*
 	 * The simplest case - just a plain lookup.
 	 */
-	if (!(flag & O_CREAT)) {/* 如果不创建文件，则用LOOKUP_OPEN标志查找文件 */
+	if (!(flag & O_CREAT)) {
+		/* 未设置O_CREAT标志，则使用LOOKUP_OPEN标志查找文件 */
 		error = path_lookup(pathname, lookup_flags(flag)|LOOKUP_OPEN, nd);
 		if (error)
 			return error;
@@ -1588,9 +1508,7 @@ int open_namei(const char * pathname, int flag, int mode, struct nameidata *nd)
 
 	/*
 	 * Create - we need to know the parent.
-	 */
-	/**
-	 * 有O_CREAT标志，则用LOOKUP_CREATE标志查找文件。
+	 * 使用LOOKUP_PARENT标志查找文件
 	 */
 	error = path_lookup(pathname, LOOKUP_PARENT|LOOKUP_OPEN|LOOKUP_CREATE, nd);
 	if (error)
@@ -1602,10 +1520,8 @@ int open_namei(const char * pathname, int flag, int mode, struct nameidata *nd)
 	 * will not do.
 	 */
 	error = -EISDIR;
-	/**
-	 * 最后一个分量是目录。失败
-	 */
 	if (nd->last_type != LAST_NORM || nd->last.name[nd->last.len])
+		/* 最后一个分量不是普通文件名，退出 */
 		goto exit;
 
 	dir = nd->dentry;
@@ -1621,12 +1537,10 @@ do_last:
 	}
 
 	/* Negative dentry, just create the file */
-	if (!dentry->d_inode) {/* 文件还不存在 */
+	if (!dentry->d_inode) {
 		if (!IS_POSIXACL(dir->d_inode))
 			mode &= ~current->fs->umask;
-		/**
-		 * 调用vfs_create来创建文件
-		 */
+		/* 调用vfs_create来创建文件 */
 		error = vfs_create(dir->d_inode, dentry, mode, nd);
 		up(&dir->d_inode->i_sem);
 		dput(nd->dentry);
@@ -1645,7 +1559,8 @@ do_last:
 	up(&dir->d_inode->i_sem);
 
 	error = -EEXIST;
-	if (flag & O_EXCL)/* 文件已经存在，如果指定了O_EXCL标志，则需要返回错误。 */
+	if (flag & O_EXCL)
+		/* 文件已经存在，且指定了O_EXCL标志，返回-EEXIST */
 		goto exit_dput;
 
 	if (d_mountpoint(dentry)) {
