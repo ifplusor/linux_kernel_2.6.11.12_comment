@@ -294,6 +294,9 @@ sysenter_past_esp:
 	sysexit
 
 
+/**
+ * 系统调用处理程序
+ */
 	# system call handler stub
 ENTRY(system_call)
 	pushl %eax			# save orig_eax
@@ -302,10 +305,10 @@ ENTRY(system_call)
 					# system call tracing in operation
 	testb $(_TIF_SYSCALL_TRACE|_TIF_SYSCALL_AUDIT),TI_flags(%ebp)
 	jnz syscall_trace_entry
-	cmpl $(nr_syscalls), %eax
+	cmpl $(nr_syscalls), %eax	# 检查系统调用号的有效性
 	jae syscall_badsys
 syscall_call:
-	call *sys_call_table(,%eax,4)
+	call *sys_call_table(,%eax,4)	# 调用与eax中包含的系统调用号对应的服务例程
 	movl %eax,EAX(%esp)		# store the return value
 syscall_exit:
 	cli				# make sure we don't miss an interrupt
