@@ -19,18 +19,9 @@ struct module;
  * kobject属性的属性。
  */
 struct attribute {
-	/**
-	 * 属性名称。
-	 */
-	char			* name;
-	/**
-	 * 属性所属模块。该模块实现这个属性。
-	 */
-	struct module 		* owner;
-	/**
-	 * 属性保护位。S_IRUGO表示只读属性。S_IWUSR仅仅为root提供写权限。
-	 */
-	mode_t			mode;
+	char			* name;		/* 属性名称 */
+	struct module 		* owner;	/* 属性所属模块。该模块实现这个属性 */
+	mode_t			mode;		/* 属性保护位。S_IRUGO表示只读属性。S_IWUSR仅仅为root提供写权限 */
 };
 
 struct attribute_group {

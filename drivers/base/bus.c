@@ -139,6 +139,9 @@ static struct kobj_type ktype_bus = {
 
 };
 
+/**
+ * bus_subsys - 总线子系统，对应的目录为/sys/bus。
+ */
 decl_subsys(bus, &ktype_bus, NULL);
 
 static int __bus_for_each_dev(struct bus_type *bus, struct device *start,

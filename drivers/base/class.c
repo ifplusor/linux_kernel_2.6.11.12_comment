@@ -68,7 +68,11 @@ static struct kobj_type ktype_class = {
 	.release	= class_release,
 };
 
-/* Hotplug events for classes go to the class_obj subsys */
+/**
+ * class_subsys - 设备类型子系统，对应的目录为/sys/class。
+ *
+ * Hotplug events for classes go to the class_obj subsys
+ */
 static decl_subsys(class, &ktype_class, NULL);
 
 

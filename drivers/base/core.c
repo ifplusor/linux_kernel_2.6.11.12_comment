@@ -158,7 +158,9 @@ static struct kset_hotplug_ops device_hotplug_ops = {
 };
 
 /**
- *	device_subsys - structure to be registered with kobject core.
+ * device_subsys - 设备子系统，对应的目录为/sys/devices。
+ *
+ * structure to be registered with kobject core.
  */
 
 decl_subsys(devices, &ktype_device, &device_hotplug_ops);

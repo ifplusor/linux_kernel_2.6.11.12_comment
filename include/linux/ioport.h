@@ -9,22 +9,18 @@
 #define _LINUX_IOPORT_H
 
 #include <linux/compiler.h>
-/*
+
+/**
+ * 分配给设备驱动程序的端口资源
+ *
  * Resources are tree-like, allowing
  * nesting etc..
  */
-/**
- * 分配给设备驱动程序的端口资源
- */
 struct resource {
-	/* 资源拥有者的描述 */
-	const char *name;
-	/* 资源范围的开始和结束 */
-	unsigned long start, end;
-	/* 标志 */
-	unsigned long flags;
-	/* 资源树中父亲、兄弟、第一个孩子的指针 */
-	struct resource *parent, *sibling, *child;
+	const char *name;		/* 资源拥有者的描述 */
+	unsigned long start, end;	/* 资源范围的开始和结束 */
+	unsigned long flags;		/* 标志 */
+	struct resource *parent, *sibling, *child;	/* 资源树中父亲、兄弟、第一个孩子的指针 */
 };
 
 struct resource_list {

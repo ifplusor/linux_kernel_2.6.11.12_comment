@@ -48,59 +48,31 @@ struct class_device;
 struct class_simple;
 
 /**
- * 内核所支持的每一种总线类型都由一个bus_type描述。
+ * 总线类型
+ *
+ * 每个bus_type对象都包含一个内嵌的子系统，bus_subsys把所有嵌入在bus_type对象中的子系统集合在一起。
+ * bus_subsys子系统对应的目录为/sys/bus。
  */
 struct bus_type {
-	/**
-	 * 总线类型的名称。例如"pci"
-	 */
-	char			* name;
+	char			* name;		/* 总线类型的名称。例如"pci" */
 
-	/**
-	 * 与总线类型相关的kobject子系统。这些子系统并不在sysfs的顶层。
-	 * 一个总线包含两个kset，分别代表了总线的驱动程序和插入总线的所有设备。
-	 */
-	struct subsystem	subsys;
-	/**
-	 * 驱动程序的kobject集合
-	 */
-	struct kset		drivers;
-	/**
-	 * 设备的kobject集合
-	 */
-	struct kset		devices;
+	struct subsystem	subsys;		/* 与总线类型相关的kobject子系统 */
+	struct kset		drivers;	/* 驱动程序的kobject集合 */
+	struct kset		devices;	/* 设备的kobject集合。
+						 * devices目录存放了指向/sys/devices下目录的符号链接。 */
 
-	/**
-	 * 指向对象的指针，该对象包含总线属性和用于导出此属性到sysfs文件系统的方法
-	 */
-	struct bus_attribute	* bus_attrs;
-	/**
-	 * 指向对象的指针，该对象包含设备属性和用于导出此属性到sysfs文件系统的方法
-	 */
-	struct device_attribute	* dev_attrs;
-	/**
-	 * 指向对象的指针，该对象包含驱动程序属性和用于导出此属性到sysfs文件系统的方法
-	 */
-	struct driver_attribute	* drv_attrs;
+	struct bus_attribute	* bus_attrs;	/* 指向对象的指针，该对象包含总线属性和用于导出此属性到sysfs文件系统的方法 */
+	struct device_attribute	* dev_attrs;	/* 指向对象的指针，该对象包含设备属性和用于导出此属性到sysfs文件系统的方法 */
+	struct driver_attribute	* drv_attrs;	/* 指向对象的指针，该对象包含驱动程序属性和用于导出此属性到sysfs文件系统的方法 */
 
-	/**
-	 * 检验给定的设备驱动程序是否支持特定设备的方法.
-	 * 当一个总线上的新设备或者新驱动程序被添加时，会一次或多次调用这个函数。如果指定的驱动程序能够处理指定的设备，该函数返回非0值。
-	 */
+	/* 检验给定的设备驱动程序是否支持特定设备的方法 */
 	int		(*match)(struct device * dev, struct device_driver * drv);
-	/**
-	 * 注册设备时调用的方法
-	 * 在为用户空间产生热插拨事件前，这个方法允许总线添加环境变量。
-	 */
+	/* 注册设备时调用的方法 */
 	int		(*hotplug) (struct device *dev, char **envp, 
 				    int num_envp, char *buffer, int buffer_size);
-	/**
-	 * 保存硬件设备的上下文状态并改变设备供电状态的方法
-	 */
+	/* 保存硬件设备的上下文状态并改变设备供电状态的方法 */
 	int		(*suspend)(struct device * dev, pm_message_t state);
-	/**
-	 * 改变供电状态和恢复硬件设备上下文的方法
-	 */
+	/* 改变供电状态和恢复硬件设备上下文的方法 */
 	int		(*resume)(struct device * dev);
 };
 
@@ -143,55 +115,31 @@ extern int bus_create_file(struct bus_type *, struct bus_attribute *);
 extern void bus_remove_file(struct bus_type *, struct bus_attribute *);
 
 /**
- * 驱动程序描述符
+ * 设备驱动程序模型中的驱动程序
+ *
+ * device_driver对象的几个方法用于处理热插拔、即插即用和电源管理。
+ * 通常，device_driver对象被静态地嵌入到一个更大的描述符中，如：pci_driver。
  */
 struct device_driver {
-	/**
-	 * 驱动程序的名称
-	 */
-	char			* name;
-	/**
-	 * 指向总线描述符的指针。
-	 */
-	struct bus_type		* bus;
+	char			* name;		/* 驱动程序的名称 */
+	struct bus_type		* bus;		/* 指向总线描述符的指针 */
 
-	/**
-	 * 禁止卸载设备驱动程序的信号量。
-	 */
-	struct semaphore	unload_sem;
-	/**
-	 * 内嵌kobject
-	 */
-	struct kobject		kobj;
-	/**
-	 * 驱动程序所支持的所有设备组成的链表的首部。
-	 */
-	struct list_head	devices;
+	struct semaphore	unload_sem;	/* 禁止卸载设备驱动程序的信号量。
+						 * 当引用计数为0时释放该信号量 */
+	struct kobject		kobj;		/* 内嵌的kobject */
+	struct list_head	devices;	/* 驱动程序所支持的所有设备组成的链表的头 */
 
-	/**
-	 * 驱动程序所在模块（如果有的话）
-	 */
-	struct module 		* owner;
+	struct module 		* owner;	/* 实现驱动程序的模块（如果有的话） */
 
-	/**
-	 * 探测设备的方法
-	 */
+	/* 探测设备的方法（检测设备驱动程序是否可以控制该设备） */
 	int	(*probe)	(struct device * dev);
-	/**
-	 * 移走设备的方法（检测设备驱动程序是否可以控制该设备）
-	 */
+	/* 移走设备时调用的方法 */
 	int 	(*remove)	(struct device * dev);
-	/**
-	 * 设备断电时调用的方法。
-	 */
+	/* 设备断电时调用的方法。 */
 	void	(*shutdown)	(struct device * dev);
-	/**
-	 * 设备置于低功率状态时所调用的方法
-	 */
+	/* 设备置于低功率状态时所调用的方法 */
 	int	(*suspend)	(struct device * dev, u32 state, u32 level);
-	/**
-	 * 设备恢复正常状态时所调用的方法
-	 */
+	/* 设备恢复正常状态时所调用的方法 */
 	int	(*resume)	(struct device * dev, u32 level);
 };
 
@@ -224,44 +172,29 @@ extern int driver_create_file(struct device_driver *, struct driver_attribute *)
 extern void driver_remove_file(struct device_driver *, struct driver_attribute *);
 
 
-/*
- * device classes
- */
 /**
- * 设备类。所有的类对象都属于与/sys/class目录相对应的class_subsys子系统。
+ * device classes
+ *
+ * 每个class对象都包含一个内嵌的子系统，class_subsys把所有嵌入在class对象中的子系统集合在一起。
+ * class_subsys子系统对应的目录为/sys/class。
  */
 struct class {
-	/**
-	 * 类名称。将显示在/sys/class中。
-	 */
-	char			* name;
+	char			* name;		/* 类名称 */
 
-	struct subsystem	subsys;
+	struct subsystem	subsys;		/* 与设备类型相关的kobject子系统 */
 	struct list_head	children;
 	struct list_head	interfaces;
 
-	/**
-	 * 一个类被注册后，将创建该字段指向的数组中的所有属性。
-	 */
-	struct class_attribute		* class_attrs;
-	/**
-	 * 该类添加的设备的默认属性。
-	 */
-	struct class_device_attribute	* class_dev_attrs;
+	struct class_attribute		* class_attrs;		/* 一个类被注册后，将创建该字段指向的数组中的所有属性 */
+	struct class_device_attribute	* class_dev_attrs;	/* 该类添加的设备的默认属性 */
 
-	/**
-	 * 设备热插拨时，调用此回调函数为应用程序创建环境变量。
-	 */
+	/* 设备热插拨时，调用此回调函数为应用程序创建环境变量 */
 	int	(*hotplug)(struct class_device *dev, char **envp, 
 			   int num_envp, char *buffer, int buffer_size);
 
-	/**
-	 * 把设备从类中删除时，调用release方法。
-	 */
+	/* 把设备从类中删除时，调用release方法 */
 	void	(*release)(struct class_device *dev);
-	/**
-	 * 当类被释放时，调用此方法。
-	 */
+	/* 当类被释放时，调用此方法 */
 	void	(*class_release)(struct class *class);
 };
 
@@ -285,7 +218,7 @@ extern int class_create_file(struct class *, const struct class_attribute *);
 extern void class_remove_file(struct class *, const struct class_attribute *);
 
 /**
- * 
+ * 按类型的逻辑设备，多个class_device对象可以表示同一设备。
  */
 struct class_device {
 	struct list_head	node;
@@ -363,103 +296,54 @@ extern void class_simple_device_remove(dev_t dev);
 
 
 /**
- * 设备驱动程序模型中的每个设备由device表示
+ * 设备驱动程序模型中的设备
+ *
+ * device对象全部收集在devices_subsys子系统中，该子系统对应的目录为/sys/devices。
+ * 通常，device对象被静态地嵌入到一个更大的描述符中，如：pci_dev。
  */
 struct device {
-	/**
-	 * 指向兄弟设备的指针
-	 */
 	struct list_head node;		/* node in sibling list */
-	/**
-	 * 指向连于同一类型总路线上的设备链表的指针。
-	 */
 	struct list_head bus_list;	/* node in bus's list */
-	/**
-	 * 指向设备驱动程序链表的指针。
-	 */
-	struct list_head driver_list;
-	/**
-	 * 子设备链表的首部
-	 */
-	struct list_head children;
-	/**
-	 * 指向父设备的指针
-	 * 父设备。即该设备所属的设备。
-	 * 大多数情况下，一个父设备通常是某种总线或者是宿主控制器。
-	 * 如果parent为NULL，表示该设备是顶层设备。
-	 */
-	struct device 	* parent;
+	struct list_head driver_list;	/* 驱动程序对象的设备（devices）链表的结点 */
+	struct list_head children;	/* 子设备链表的头 */
+	struct device 	* parent;	/* 指向父设备的指针
+					 * 父设备，即该设备所属的设备。子设备离开父设备无法正常工作。
+					 * 大多数情况下，一个父设备通常是某种总线或者是宿主控制器。
+					 * 如果parent为NULL，表示该设备是顶层设备。 */
 
-	/**
-	 * 内嵌kobject。
-	 * 通过该字段将设备连接到结构体系中。
-	 * 作为通用准则，device->kobj->parent和device->parent->kobj是相同的。
-	 */
-	struct kobject kobj;
-	/**
-	 * 连接到总线上设备的位置
-	 * 在总线上唯一标识该设备的字符串。如PCI设备使用了标准PCI ID格式，它包括:域编号、总线编号、设备编号和功能编号。
-	 */
-	char	bus_id[BUS_ID_SIZE];	/* position on parent bus */
+	struct kobject kobj;		/* 内嵌的kobject
+					 * 通过该字段将设备连接到结构体系中。
+					 * 作为通用准则，device->kobj->parent和device->parent->kobj是相同的。 */
+	char	bus_id[BUS_ID_SIZE];	/* position on parent bus
+					 * 在总线上唯一标识该设备的字符串。
+					 * 如PCI设备使用了标准PCI ID格式，它包括:域编号、总线编号、设备编号和功能编号。 */
 
-	/**
-	 * 指向所连接总线的指针
-	 * 标识该设备连接在何种类型的总线上。
-	 */
-	struct bus_type	* bus;		/* type of bus device is on */
-	/**
-	 * 指向控制设备驱动程序的指针
-	 */
+	struct bus_type	* bus;		/* 指向所连接总线的指针
+					 * type of bus device is on */
 	struct device_driver *driver;	/* which driver has allocated this
 					   device */
-	/**
-	 * 指向驱动程序私有数据的指针
-	 */
 	void		*driver_data;	/* data private to the driver */
 	
-	/**
-	 * 指向遗留设备驱动程序私有数据的指针
-	 */
 	void		*platform_data;	/* Platform specific data (e.g. ACPI,
 					   BIOS data relevant to device) */
-	/**
-	 * 电源管理信息
-	 */
-	struct dev_pm_info	power;
+	struct dev_pm_info	power;	/* 电源管理信息 */
 
-	/**
-	 * 卸载设备驱动程序时电源进入的状态
-	 */
 	u32		detach_state;	/* State to enter when device is
 					   detached from its driver. */
 
-	/**
-	 * 指向设备的DMA屏蔽字的指针
-	 */
 	u64		*dma_mask;	/* dma mask (if dma'able device) */
-	/**
-	 * 设备的一致性DMA的屏蔽字
-	 */
 	u64		coherent_dma_mask;/* Like dma_mask, but for
 					     alloc_coherent mappings as
 					     not all hardware supports
 					     64 bit addresses for consistent
 					     allocations such descriptors. */
 
-	/**
-	 * DMA缓冲池链表的首部
-	 */
 	struct list_head	dma_pools;	/* dma pools (if dma'ble) */
 
-	/**
-	 * 指向设备所使用的一致性DMA存储器描述符的指针
-	 */
 	struct dma_coherent_mem	*dma_mem; /* internal for coherent mem
 					     override */
 
-	/**
-	 * 释放回调函数
-	 */
+	/* 释放设备描述符的回调函数 */
 	void	(*release)(struct device * dev);
 };
 
