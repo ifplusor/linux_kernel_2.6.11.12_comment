@@ -2034,10 +2034,8 @@ no_mem:
  *
  * This is called with the MM semaphore held and the page table
  * spinlock held. Exit with the spinlock released.
- */
-/**
- * 当被访问的页不在主存中时，如果页从没有访问过，或者映射了磁盘文件
- * 那么pte_none宏会返回1，handle_pte_fault函数会调用本函数装入所缺的页。
+ *
+ * 当被访问的页不在主存中时，handle_pte_fault函数会调用本函数装入所缺的页。
  */
 static int
 do_no_page(struct mm_struct *mm, struct vm_area_struct *vma,
@@ -2050,21 +2048,12 @@ do_no_page(struct mm_struct *mm, struct vm_area_struct *vma,
 	int ret = VM_FAULT_MINOR;
 	int anon = 0;
 
-	/**
-	 * vma->vm_ops || !vma->vm_ops->nopage,这是判断线性区是否映射了一个磁盘文件。
-	 * 这两个值只要某一个为空，说明没有映射磁盘文件。也就是说：它是一个匿名映射。
-	 * nopage指向装入页的函数。
-	 * 当没有映射时，就调用do_anonymous_page获得一个新的页框。
-	 */
+	/* 如果线性区未定义nopage方法，说明是一个匿名映射。 */
 	if (!vma->vm_ops || !vma->vm_ops->nopage)
-		/**
-		 * do_anonymous_page获得一个新的页框。分别处理写请求和读讨还。
-		 */
+		/* do_anonymous_page获得一个新的页框。分别处理写和读请求。 */
 		return do_anonymous_page(mm, vma, page_table,
 					pmd, write_access, address);
-	/**
-	 * 否则，就是一个文件映射。进行请求调页处理。
-	 */
+	/* 否则，就是一个文件映射。进行请求调页处理。 */
 	pte_unmap(page_table);
 	spin_unlock(&mm->page_table_lock);
 
@@ -2075,9 +2064,7 @@ do_no_page(struct mm_struct *mm, struct vm_area_struct *vma,
 	}
 retry:
 	cond_resched();
-	/**
-	 * 线性区定义了nopage方法，则回调此方法以返回所请求页的页框的地址。
-	 */
+	/* 调用nopage方法，获得包括所请求页的页框的地址。 */
 	new_page = vma->vm_ops->nopage(vma, address & PAGE_MASK, &ret);
 	/*
 	 * No smp_rmb is needed here as long as there's a full
@@ -2096,25 +2083,20 @@ retry:
 	/*
 	 * Should we do an early C-O-W break?
 	 */
-	/**
-	 * 进程试图对页进行写入，而该内存映射是私有的，需要取消内存映射。
-	 */
+	/* 进程试图对页进行写入，而该内存映射是私有的，需要取消内存映射。 */
 	if (write_access && !(vma->vm_flags & VM_SHARED)) {
 		struct page *page;
 
 		if (unlikely(anon_vma_prepare(vma)))
 			goto oom;
-		/**
-		 * 分配一个新页。并将读取的页拷贝一份到新页中。。
-		 */
+		/* 分配一个新页，并将刚读取的页拷贝到新页中。 */
 		page = alloc_page_vma(GFP_HIGHUSER, vma, address);
 		if (!page)
 			goto oom;
 		copy_user_highpage(page, new_page, address);
 		page_cache_release(new_page);
-		/**
-		 * 在后面的步骤中，使用新页而不是nopage方法返回的页，这样，后者就不会被用户态进程修改。
-		 */
+		/* 在后面的步骤中，使用新页而不是nopage方法返回的页，
+		 * 保证后者不会被用户态进程修改。 */
 		new_page = page;
 		anon = 1;
 	}
@@ -2124,9 +2106,6 @@ retry:
 	 * For a file-backed vma, someone could have truncated or otherwise
 	 * invalidated this page.  If unmap_mapping_range got called,
 	 * retry getting the page.
-	 */
-	/**
-	 * 如果某个其他进程删改或者作废了该页(truncate_count用于此种检查),则跳转回去，尝试再次获得该页。
 	 */
 	if (mapping && unlikely(sequence != mapping->truncate_count)) {
 		sequence = mapping->truncate_count;
@@ -2149,18 +2128,17 @@ retry:
 	/* Only go through if we didn't race with anybody else... */
 	if (pte_none(*page_table)) {
 		if (!PageReserved(new_page))
-			++mm->rss;/* 增加进程的rss字段，以表示一个新页框已经分配给进程。 */
+			/* 增加进程内存描述符的rss字段，表示一个新页框已经分配给进程。 */
+			++mm->rss;
 		acct_update_integrals();
 		update_mem_hiwater();
 
 		flush_icache_page(vma, new_page);
-		/**
-		 * 用新页框 的地址以及线性区的vm_page_prot字段中所包含的页访问权来设置缺页所在的地址对应的页表项。
-		 */
+		/* 用新页框的地址以及线性区的vm_page_prot字段中所包含的页访问权
+		 * 来设置缺页所在的地址对应的页表项。 */
 		entry = mk_pte(new_page, vma->vm_page_prot);
-		/**
-		 * 如果进程试图对这个页进行写入，则把页表项的read/write和dirty设置为1.
-		 */
+		/* 如果进程试图对这个页进行写入，则把页表项的read/write和dirty
+		 * 位强制置为1。 */
 		if (write_access)
 			entry = maybe_mkwrite(pte_mkdirty(entry), vma);
 		set_pte(page_table, entry);
