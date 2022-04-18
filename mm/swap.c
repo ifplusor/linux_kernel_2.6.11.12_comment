@@ -124,15 +124,15 @@ void fastcall activate_page(struct page *page)
  * inactive,unreferenced	->	inactive,referenced
  * inactive,referenced		->	active,unreferenced
  * active,unreferenced		->	active,referenced
- */
-/**
- * 将一个页标记为访问过。只有当PG_referenced标志置位时，它把页从非活动链表移到活动链表。以下情况会调用本函数:
- *		当按需装入进程的一个匿名页时。
- *		当按需装入内存映射文件的一个页时。
- *		当按需装入IPC共享内存区的一个页时。
- *		当从文件读取数据页时。
- *		当换入一个页时。
- *		当在高速缓存中搜索一个缓冲区页时。
+ *
+ * 只有当PG_referenced标志置位时，它才把页从非活动链表移到活动链表。
+ * 下列情况会调用本函数:
+ * - 当按需装入进程的一个匿名页时，由do_anonymous_page()函数执行。
+ * - 当按需装入内存映射文件的一个页时，由filemap_nopage()函数执行。
+ * - 当按需装入IPC共享内存区的一个页时，由shmem_nopage()函数执行。
+ * - 当从文件读取数据页时，由do_generic_file_read()函数执行。
+ * - 当换入一个页时，由do_swap_page()函数执行。
+ * - 当在高速缓存中搜索一个缓冲区页时。
  */
 void fastcall mark_page_accessed(struct page *page)
 {

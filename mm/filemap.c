@@ -540,30 +540,20 @@ EXPORT_SYMBOL(__lock_page);
  * a rather lightweight function, finding and getting a reference to a
  * hashed page atomically.
  */
-/**
- * 在页高速缓存的基树中查找页
- */
 struct page * find_get_page(struct address_space *mapping, unsigned long offset)
 {
 	struct page *page;
 
-	/**
-	 * 先获取基树锁
-	 */
+	/* 先获取基树锁 */
 	spin_lock_irq(&mapping->tree_lock);
-	/**
-	 * radix_tree_lookup函数搜索拥有指定偏移量的基树的叶子节点。
-	 * 根据偏移量值中的位依次从树根开始向下搜索。如果遇到空指针，则返回NULL。否则，返回叶子节点的地址。
-	 */
+	/* radix_tree_lookup函数搜索拥有指定偏移量的基树的叶子节点。
+	 * 根据偏移量值中的位依次从树根开始向下搜索。
+	 * 如果遇到空指针，则返回NULL。否则，返回叶子节点的地址。 */
 	page = radix_tree_lookup(&mapping->page_tree, offset);
-	/**
-	 * 如果找到所需要的页，就增加该页的使用计数器
-	 */
+	/* 如果找到所需要的页，就增加该页的使用计数器 */
 	if (page)
 		page_cache_get(page);
-	/**
-	 * 释放基树锁，并返回页地址。
-	 */
+	/* 释放基树锁，并返回页地址。 */
 	spin_unlock_irq(&mapping->tree_lock);
 	return page;
 }
@@ -1429,23 +1419,22 @@ static int fastcall page_cache_read(struct file * file, unsigned long offset)
  * filemap_nopage() is invoked via the vma operations vector for a
  * mapped memory region to read in file data during a page fault.
  *
+ * @area:	所请求页所在线性区的描述符地址。
+ * @address:	所请求页的线性地址。
+ * @type:	存放函数侦测到的缺页类型（VM_FAULT_MAJOR或VM_FAULT_MINOR）的变量的指针。
+ *
+ * 几乎所有磁盘文件系统和块设备文件都通过filemap_nopage()函数实现nopage方法。
+ * 在处理对磁盘文件进行映射的线性区时，nopage方法必须首先在页高速缓存中查找所请
+ * 求的页。如果没有找到相应的页，就必须将其从磁盘上读入。
+ *
  * The goto's are kind of ugly, but this streamlines the normal case of having
  * it in the page cache, and handles the special cases reasonably without
  * having a lot of duplicated code.
  */
-/**
- * 几乎所有文件系统和块设备文件都通过本方法实现内存映射的nopage方法。
- * 必须首先在页高速缓存中查找所请求的页。如果没有找到相应的页，这个方法就必须将其从磁盘上读入。
- * 		area:		所请求页所在线性区的描述符地址。
- * 		address:	所请求页的线性地址。
- * 		type:		存放函数侦测到的缺页类型(VM_FAULT_MAJOR或者VM_FAULT_MINOR)的变量的指针。
- */
 struct page * filemap_nopage(struct vm_area_struct * area, unsigned long address, int *type)
 {
 	int error;
-	/**
-	 * 从area得到文件对象地址，address_space对象地址，索引节点对象地址。
-	 */
+	/* 从area得到文件对象地址，address_space对象地址，索引节点对象地址。 */
 	struct file *file = area->vm_file;
 	struct address_space *mapping = file->f_mapping;
 	struct file_ra_state *ra = &file->f_ra;
@@ -1454,25 +1443,17 @@ struct page * filemap_nopage(struct vm_area_struct * area, unsigned long address
 	unsigned long size, pgoff, endoff;
 	int did_readaround = 0, majmin = VM_FAULT_MINOR;
 
-	/**
-	 * 根据vm_start和vm_pgoff来确定从address开始的页对应的数据在文件中的偏移量。
-	 */
+	/* 根据vm_start和vm_pgoff来确定从address开始的页对应的数据在文件中的偏移量。 */
 	pgoff = ((address - area->vm_start) >> PAGE_CACHE_SHIFT) + area->vm_pgoff;
 	endoff = ((area->vm_end - area->vm_start) >> PAGE_CACHE_SHIFT) + area->vm_pgoff;
 
 retry_all:
 	size = (i_size_read(inode) + PAGE_CACHE_SIZE - 1) >> PAGE_CACHE_SHIFT;
-	/**
-	 * 如果文件偏移量大于文件大小。如果是，就返回NULL。这表示分配新页失败。
-	 * 除非缺页是由调试程序通过ptrace系统调用跟踪另一个进程引起的。这也是outside_data_content进行了current->mm == area->mm的原因。
-	 */
+	/* 如果文件偏移量大于文件大小，就返回NULL，表示分配新页失败。 */
 	if (pgoff >= size)
 		goto outside_data_content;
 
-	/* If we don't want any read-ahead, don't bother */
-	/**
-	 * 如果线性区的VM_RAND_READ标志被设置。则假定进程以随机方式读内存映射中的页，则忽略预读。
-	 */
+	/* If we don't want any read-ahead(VM_RAND_READ is set), don't bother */
 	if (VM_RandomReadHint(area))
 		goto no_cached_page;
 
@@ -1483,14 +1464,11 @@ retry_all:
 	if (size > endoff)
 		size = endoff;
 
-	/*
+	/* (VM_SEQ_READ is set)
 	 * The readahead code wants to be told about each and every page
 	 * so it can build and shrink its windows appropriately
 	 *
 	 * For sequential accesses, we use the generic readahead logic.
-	 */
-	/**
-	 * 文件设置了VM_SEQ_READ，那么需要处理预读。
 	 */
 	if (VM_SequentialReadHint(area))
 		page_cache_readahead(mapping, ra, file, pgoff, 1);
@@ -1499,39 +1477,24 @@ retry_all:
 	 * Do we have something in the page cache already?
 	 */
 retry_find:
-	/**
-	 * 调用find_get_page在页高速缓存内寻找由address_space对象和文件偏移量标识的页。
-	 */
+	/* 在页高速缓存内寻找由address_space对象和文件偏移量标识的页。 */
 	page = find_get_page(mapping, pgoff);
-	/**
-	 * 在页高速缓存中没有找到对应的页。
-	 */
+	/* 没有找到对应的页。 */
 	if (!page) {
 		unsigned long ra_pages;
 
-		/**
-		 * 如果运行到此，说明没有在页高速缓存内找到页，则检查VM_SEQ_READ标志。
-		 */
+		/* 检查VM_SEQ_READ标志。 */
 		if (VM_SequentialReadHint(area)) {
-			/**
-			 * 如果该标志置位，并且页没有在缓存中，说明预读算法失败，内核会强行预读线性区中的页。
-			 * 调用handle_ra_miss来调整预读参数。
-			 */
+			/* 预读算法失败，调用handle_ra_miss()调整预读参数。 */
 			handle_ra_miss(mapping, ra, pgoff);
 			goto no_cached_page;
 		}
 
-		/**
-		 * 没有设置VM_SEQ_READ标志，则将文件file_ra_state描述符中的mmap_miss计数器加1.
-		 */
 		ra->mmap_miss++;
 
 		/*
 		 * Do we miss much more than hit in this file? If so,
 		 * stop bothering with read-ahead. It will only hurt.
-		 */
-		/**
-		 * 如果失败数远大于命中数，则忽略预读。
 		 */
 		if (ra->mmap_miss > ra->mmap_hit + MMAP_LOTSAMISS)
 			goto no_cached_page;
@@ -1546,39 +1509,28 @@ retry_find:
 		}
 		did_readaround = 1;
 		ra_pages = max_sane_readahead(file->f_ra.ra_pages);
-		/**
-		 * 如果ra_pages大于0，表示预读没有永久禁止
-		 */
+		/* ra_pages大于0，表示预读没有永久禁止 */
 		if (ra_pages) {
 			pgoff_t start = 0;
 
 			if (pgoff > ra_pages / 2)
 				start = pgoff - ra_pages / 2;
-			/**
-			 * 调用do_page_cache_readahead读入请求页前后的一组页。
-			 */
+			/* 读入请求页前后的一组页。 */
 			do_page_cache_readahead(mapping, file, start, ra_pages);
 		}
-		/**
-		 * 再次调用find_get_page在页高速缓存中查找页。
-		 */
+		/* 再次调用find_get_page()，在页高速缓存中查找页。 */
 		page = find_get_page(mapping, pgoff);
 		if (!page)
 			goto no_cached_page;
 	}
 
-	/**
-	 * 请求页已经在页高速缓存中，将mmap_hit计数器加1.
-	 */
+	/* 请求页已经在页高速缓存中。 */
 	if (!did_readaround)
 		ra->mmap_hit++;
 
 	/*
 	 * Ok, found a page in the page cache, now we need to check
 	 * that it's up-to-date.
-	 */
-	/**
-	 * 页不是最新的。
 	 */
 	if (!PageUptodate(page))
 		goto page_not_uptodate;
@@ -1587,18 +1539,13 @@ success:
 	/*
 	 * Found the page and have a reference on it.
 	 */
-	/**
-	 * 标记请求页的访问标志。
-	 */
+	/* 标记请求页的访问标志。 */
 	mark_page_accessed(page);
-	/**
-	 * type表示是在页高速缓存中，还是从磁盘中找到页面的最新版。
-	 */
 	if (type)
+		/* 如果在页高速缓存内找到该页的最新版，将*type设为
+		 * VM_FAULT_MINOR，否则设为VM_FAULT_MAJOR。 */
 		*type = majmin;
-	/**
-	 * 返回请求页地址。
-	 */
+	/* 返回请求页地址。 */
 	return page;
 
 outside_data_content:
@@ -1614,15 +1561,11 @@ no_cached_page:
 	 * We're only likely to ever get here if MADV_RANDOM is in
 	 * effect.
 	 */
-	/**
-	 * 在页高速缓存中没有找到页，则调用page_cache_read。
-	 * 该函数检查请求页是否在页高速缓存中，如果不在，则分配一个新页框，把它追加到页调整缓存。
-	 * 执行mapping->a_ops->readpage方法，安排一个IO操作从磁盘读入该页内容。
-	 */
+	/* 调用page_cache_read()检查请求页是否在页高速缓存中。 如果不在，
+	 * 则分配一个新页框，把它追加到页调整缓存。执行mapping->a_ops->readpage
+	 * 方法，安排一个I/O操作从磁盘读入该页内容。 */
 	error = page_cache_read(file, pgoff);
-	/**
-	 * grab_swap_token尽可能为当前进程分配一个交换标记。
-	 */
+	/* 调用grab_swap_token()尽可能为当前进程分配一个交换标记。 */
 	grab_swap_token();
 
 	/*
@@ -1642,17 +1585,14 @@ no_cached_page:
 		return NOPAGE_OOM;
 	return NULL;
 
-/**
- * 页不是最新的。
- */
 page_not_uptodate:
+	/*
+	 * 页不是最新的，锁定该页并触发I/O数据传输，然后等待传输完成。
+	 */
 	if (!did_readaround) {
 		majmin = VM_FAULT_MAJOR;
 		inc_page_state(pgmajfault);
 	}
-	/**
-	 * 先锁定该页。并触发IO数据传输，然后等待传输完成。
-	 */
 	lock_page(page);
 
 	/* Did it get unhashed while we waited for it? */
@@ -1663,21 +1603,15 @@ page_not_uptodate:
 	}
 
 	/* Did somebody else get it up-to-date? */
-	/**
-	 * 如果其他进程抢占了本进程，并将页面读入了，就不用再次进行IO传输了。
-	 */
+	/* 如果其他进程抢占了本进程，并将页面读入了，就不用再次进行IO传输了。 */
 	if (PageUptodate(page)) {
 		unlock_page(page);
 		goto success;
 	}
 
-	/**
-	 * 调用readpage回调函数触发IO数据传输。
-	 */
+	/* 调用readpage方法触发I/O数据传输。 */
 	if (!mapping->a_ops->readpage(file, page)) {
-		/**
-		 * 等待页面传输完毕。
-		 */
+		/* 等待页面传输完毕。 */
 		wait_on_page_locked(page);
 		if (PageUptodate(page))
 			goto success;
