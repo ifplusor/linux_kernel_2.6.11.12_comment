@@ -202,56 +202,50 @@ static int filemap_sync(struct vm_area_struct *vma, unsigned long address,
 static int msync_interval(struct vm_area_struct * vma,
 	unsigned long start, unsigned long end, int flags)
 {
-	/**
-	 * 默认返回值为0.当不是共享映射时，就返回它。
-	 */
+	/* 默认返回值为0.当不是共享映射时，就返回它。 */
 	int ret = 0;
 	struct file * file = vma->vm_file;
 
 	if ((flags & MS_INVALIDATE) && (vma->vm_flags & VM_LOCKED))
 		return -EBUSY;
 
-	/**
-	 * 只有线性区是文件映射并且是共享内存映射时，才进行处理。
-	 */
+	/* 只有线性区是文件映射并且是共享内存映射时，才进行处理。 */
 	if (file && (vma->vm_flags & VM_SHARED)) {
-		/**
-		 * filemap_sync函数扫描包含在线性区中的线性地址区间所对应的页表项。
-		 * 对于找到的每个页，重设对应页表项的Dirty标志，调用flush_tlb_page刷新相应的TLB。然后设置页描述符中的PG_dirty标志，将页标记为脏。
-		 */
+		/* filemap_sync函数扫描包含在线性区中的线性地址区间所对应的页表
+		 * 项。对于找到的每个页，重设对应页表项的Dirty标志，调用
+		 * flush_tlb_page()刷新相应的TLB。然后设置页描述符中的PG_dirty
+		 * 标志，将页标记为脏。 */
 		ret = filemap_sync(vma, start, end-start, flags);
 
-		/**
-		 * 只有设置了MS_SYNC才继续进行处理。否则直接返回。
-		 */
+		/* 若设置MS_SYNC，必须将内存区的页刷新到磁盘。 */
 		if (!ret && (flags & MS_SYNC)) {
 			struct address_space *mapping = file->f_mapping;
 			int err;
 
-			/**
-			 * filemap_fdatawrite函数用WB_SYNC_ALL同步模式建立一个writeback_control描述符。
-			 * 如果地址空间有内置的writepages方法就调用这个函数后函数。如果没有，就执行mpage_writepages函数。
-			 */
+			/* filemap_fdatawrite函数用WB_SYNC_ALL同步模式建立一个
+			 * writeback_control描述符，并检查地址空间是否有内置的
+			 * writepages方法。如果有，就调用这个函数后返回。
+			 * 如果没有，就执行mpage_writepages()函数。 */
 			ret = filemap_fdatawrite(mapping);
+			/* 如果文件对象定义了fsync方法，就执行它。
+			 * 对普通文件，这个方法限制自己把文件的索引节点对象刷新到磁盘。
+			 * 对块设备文件，这个方法调用sync_blockdev()，
+			 * 它会将该设备所有脏缓冲区的数据保存到磁盘中。 */
 			if (file->f_op && file->f_op->fsync) {
 				/*
 				 * We don't take i_sem here because mmap_sem
 				 * is already held.
 				 */
-				/**
-				 * 如果定义了文件对象的fsync方法。如果定义了，就执行它。
-				 * 对普通文件来说，这个方法限制自己把文件的索引节点对象刷新到磁盘。
-				 * 对块设备文件，这个方法调用sync_blockdev，它会将该设备所有脏缓冲区的数据保存到磁盘中。
-				 */
 				err = file->f_op->fsync(file,file->f_dentry,1);
 				if (err && !ret)
 					ret = err;
 			}
-			/**
-			 * 执行filemap_fdatawait函数，页高速缓存中的基树标识了所有通过PAGECHCHE_TAG_WRITEBACK标记正在往磁盘写的页。
-			 * 函数快速地扫描覆盖给定线性地址空间的这一部分基树来寻找PG_writeback标志置位的页。并调用wait_on_page_bit等待每一页的PG_writeback标志清0.
-			 * 也就是等到正在进行的该页的IO数据传输结束。
-			 */
+			/* 页高速缓存中的基树标识了所有通过
+			 * PAGECHCHE_TAG_WRITEBACK标记正在往磁盘写的页。
+			 * filemap_fdatawait函数快速地扫描覆盖给定线性地址空间的
+			 * 这一部分基树来寻找PG_writeback标志置位的页。
+			 * 并调用wait_on_page_bit()等待每一页的PG_writeback标志
+			 * 清0，也就是等到正在进行的该页的IO数据传输结束。 */
 			err = filemap_fdatawait(mapping);
 			if (!ret)
 				ret = err;
@@ -262,12 +256,14 @@ static int msync_interval(struct vm_area_struct * vma,
 
 /**
  * msync系统调用的实现。把属于共享内存映射的脏页刷新到磁盘。
- * 		start:	一个线性地址区间的起始地址。
- *		len:	区间的长度。
- *		flags:	标志。
- *			MS_SYNC-要求这个系统调用挂起进程，直到IO操作完成为止。这样，调用者可以认为当系统调用完成时，内存映射中的所有页都已经被刷新到磁盘。
- *			MS_ASYNC-要求系统调用立即返回而不用挂起调用进程。
- *			MS_INVALIDATE-要求系统调用使同一文件的其他内存映射无效。LINUX并没有真正实现它。
+ * @start:	一个线性地址区间的起始地址。
+ * @len:	区间的长度。
+ * @flags:	标志。
+ *
+ * MS_SYNC: 要求这个系统调用挂起进程，直到IO操作完成为止。在这种方式中，
+ * 调用者可以认为当系统调用完成时，内存映射中的所有页都已经被刷新到磁盘。
+ * MS_ASYNC: 要求系统调用立即返回，而不用挂起调用进程。
+ * MS_INVALIDATE: 要求系统调用使同一文件的其他内存映射无效。Linux没有真正实现。
  */
 asmlinkage long sys_msync(unsigned long start, size_t len, int flags)
 {
@@ -299,9 +295,7 @@ asmlinkage long sys_msync(unsigned long start, size_t len, int flags)
 	 */
 	vma = find_vma(current->mm, start);
 	unmapped_error = 0;
-	/**
-	 * 循环处理区域中的每一个线性区。
-	 */
+	/* 循环处理区域中的每一个线性区。 */
 	for (;;) {
 		/* Still start < end. */
 		error = -ENOMEM;
@@ -322,10 +316,8 @@ asmlinkage long sys_msync(unsigned long start, size_t len, int flags)
 			error = unmapped_error;
 			goto out;
 		}
-		/* Here vma->vm_start <= start < vma->vm_end < end. */
-		/**
-		 * 对每个线性区，调用msync_interval实现直接的刷新操作。
-		 */
+		/* 对每个线性区，调用msync_interval实现直接的刷新操作。
+		 * Here vma->vm_start <= start < vma->vm_end < end. */
 		error = msync_interval(vma, start, vma->vm_end, flags);
 		if (error)
 			goto out;
