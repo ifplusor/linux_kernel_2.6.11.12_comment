@@ -97,7 +97,7 @@ Now we can read /dev/tap0 and when we ping 10.0.0.124 from our
 localhost, output should appear on the screen.
 
 	# cat /dev/tap0
-	:ßVU:9````````````````````````þýþET@?'
+	:ÃŸVU:9````````````````````````Ã¾Ã½Ã¾ET@?'
 
 
 Getting this to work from other hosts

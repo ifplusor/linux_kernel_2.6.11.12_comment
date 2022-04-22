@@ -34,7 +34,7 @@
  * saddr is address of outgoing interface.
  */
 /**
- * ¶ÔIP±¨Í·ÖĞ×¨ÊôµÄÄÇĞ©Ñ¡Ïî²¿·Ö×ö³õÊ¼»¯£¨¸ù¾İÊäÈëµÄip_options½á¹¹£©¡£´«Êä±¾µØ²úÉúµÄ°üÊ±£¬¾Í»áÓÃµ½´Ëº¯Êı¡£
+ * å¯¹IPæŠ¥å¤´ä¸­ä¸“å±çš„é‚£äº›é€‰é¡¹éƒ¨åˆ†åšåˆå§‹åŒ–ï¼ˆæ ¹æ®è¾“å…¥çš„ip_optionsç»“æ„ï¼‰ã€‚ä¼ è¾“æœ¬åœ°äº§ç”Ÿçš„åŒ…æ—¶ï¼Œå°±ä¼šç”¨åˆ°æ­¤å‡½æ•°ã€‚
  */
 void ip_options_build(struct sk_buff * skb, struct ip_options * opt,
 			    u32 daddr, struct rtable *rt, int is_frag) 
@@ -84,11 +84,11 @@ void ip_options_build(struct sk_buff * skb, struct ip_options * opt,
  * NOTE: dopt cannot point to skb.
  */
 /**
- * Ö¸¶¨Èë°ü¼°IPÑ¡Ïîºó£¬´Ëº¯Êı¾Í¿É½¨Á¢ÓÃÓÚ»Ø¸´´«ËÍÕßµÄIPÑ¡Ïî¡£
- *		 »Ø¸´ICMPÈë°üÇëÇóµÄicmp_replay¡£
- *	 	 µ±IPÈë°ü·ûºÏ²úÉúICMPÏûÏ¢ĞèÇóÊ±µÄicmp_send¡£
- *		 IP²ãËùÌá¹©µÄÍ¨ÓÃº¯Êıip_send_reply£¨ÒÔ»Ø¸´IPÈë°ü£©¡£
- *		 ´æ´¢ÈëSYN¶ÎµÄÑ¡ÏîµÄTCP¡£
+ * æŒ‡å®šå…¥åŒ…åŠIPé€‰é¡¹åï¼Œæ­¤å‡½æ•°å°±å¯å»ºç«‹ç”¨äºå›å¤ä¼ é€è€…çš„IPé€‰é¡¹ã€‚
+ *		 å›å¤ICMPå…¥åŒ…è¯·æ±‚çš„icmp_replayã€‚
+ *	 	 å½“IPå…¥åŒ…ç¬¦åˆäº§ç”ŸICMPæ¶ˆæ¯éœ€æ±‚æ—¶çš„icmp_sendã€‚
+ *		 IPå±‚æ‰€æä¾›çš„é€šç”¨å‡½æ•°ip_send_replyï¼ˆä»¥å›å¤IPå…¥åŒ…ï¼‰ã€‚
+ *		 å­˜å‚¨å…¥SYNæ®µçš„é€‰é¡¹çš„TCPã€‚
  */
 int ip_options_echo(struct ip_options * dopt, struct sk_buff * skb) 
 {
@@ -213,10 +213,10 @@ int ip_options_echo(struct ip_options * dopt, struct sk_buff * skb)
  *	Simple and stupid 8), but the most efficient way.
  */
 /**
- * ÒòÎªµÚÒ»¸öÆ¬¶ÎÊÇÎ¨Ò»¼Ì³ĞÔ­ÓĞ°üµÄËùÓĞÑ¡ÏîµÄÆ¬¶Î£¬ËùÒÔ£¬Æä±¨Í·µÄ³ß´çÓ¦´óÓÚ»òµÈÓÚºóĞøÆ¬¶ÎµÄ³ß´ç¡£
- * LINUXÈÃËùÓĞÆ¬¶Î¶¼±£³ÖÏàÍ¬µÄ±¨Í·³ß´ç£¬ÈÃ·Ö¶ÎÁ÷³Ì¸üÎª¼òµ¥ÓĞĞ§¡£
- * Æä×ö·¨ÊÇ¿½±´Ô­ÓĞ±¨Í·¼°ÆäËùÓĞÑ¡Ïî£¬È»ºó£¬³ıÁËµÚÒ»¸öÆ¬¶ÎÒÔÍâ£¬¶ÔÆäËûËùÓĞÆ¬¶Î¶¼ÒÔ¿ÕÑ¡Ïî¸²¸ÇÄÇĞ©²»ĞèÒªÖØ¸´µÄÑ¡Ïî£¨Ò²¾ÍÊÇIPOPT_COPYÃ»Éè¶¨µÄÑ¡Ïî£©£¬È»ºóÇåµôºÍÆäÏà¹ØµÄip_options±êÖ¾£¨Èçts_needaddr£©¡£
- * ±¾º¯ÊıĞŞ¸ÄµÚÒ»¸öÆ¬¶ÎµÄIP±¨Í·£¬Ê¹Æä¿ÉÒÔ±»ºóĞøÆ¬¶ÎÑ­»·ÀûÓÃ¡£
+ * å› ä¸ºç¬¬ä¸€ä¸ªç‰‡æ®µæ˜¯å”¯ä¸€ç»§æ‰¿åŸæœ‰åŒ…çš„æ‰€æœ‰é€‰é¡¹çš„ç‰‡æ®µï¼Œæ‰€ä»¥ï¼Œå…¶æŠ¥å¤´çš„å°ºå¯¸åº”å¤§äºæˆ–ç­‰äºåç»­ç‰‡æ®µçš„å°ºå¯¸ã€‚
+ * LINUXè®©æ‰€æœ‰ç‰‡æ®µéƒ½ä¿æŒç›¸åŒçš„æŠ¥å¤´å°ºå¯¸ï¼Œè®©åˆ†æ®µæµç¨‹æ›´ä¸ºç®€å•æœ‰æ•ˆã€‚
+ * å…¶åšæ³•æ˜¯æ‹·è´åŸæœ‰æŠ¥å¤´åŠå…¶æ‰€æœ‰é€‰é¡¹ï¼Œç„¶åï¼Œé™¤äº†ç¬¬ä¸€ä¸ªç‰‡æ®µä»¥å¤–ï¼Œå¯¹å…¶ä»–æ‰€æœ‰ç‰‡æ®µéƒ½ä»¥ç©ºé€‰é¡¹è¦†ç›–é‚£äº›ä¸éœ€è¦é‡å¤çš„é€‰é¡¹ï¼ˆä¹Ÿå°±æ˜¯IPOPT_COPYæ²¡è®¾å®šçš„é€‰é¡¹ï¼‰ï¼Œç„¶åæ¸…æ‰å’Œå…¶ç›¸å…³çš„ip_optionsæ ‡å¿—ï¼ˆå¦‚ts_needaddrï¼‰ã€‚
+ * æœ¬å‡½æ•°ä¿®æ”¹ç¬¬ä¸€ä¸ªç‰‡æ®µçš„IPæŠ¥å¤´ï¼Œä½¿å…¶å¯ä»¥è¢«åç»­ç‰‡æ®µå¾ªç¯åˆ©ç”¨ã€‚
  */
 void ip_options_fragment(struct sk_buff * skb) 
 {
@@ -256,10 +256,10 @@ void ip_options_fragment(struct sk_buff * skb)
  * If opt == NULL, then skb->data should point to IP header.
  */
 /**
- * ·ÖÎöIP±¨Í·ÖĞµÄÒ»Ğ©Ñ¡Ïî£¬È»ºóÏàÓ¦µÄ¶ÔÒ»¸öip_options½á¹¹µÄÊµÀı×ö³õÊ¼»¯¡£
- * Á½¸öÊäÈë²ÎÊıµÄÖµ»áÈÃº¯ÊıÖªµÀ×ÔÉíÊÇÔÚÊ²Ã´Çé¿öÏÂ±»µ÷ÓÃµÄ£º
- *		Èë°ü£ºskb²»ÎªNULL£¬optÎªNULL¡£
- * 		°üÕı±»´«Êä£ºskbÎªNULL£¬opt·Ç¿Õ¡£
+ * åˆ†æIPæŠ¥å¤´ä¸­çš„ä¸€äº›é€‰é¡¹ï¼Œç„¶åç›¸åº”çš„å¯¹ä¸€ä¸ªip_optionsç»“æ„çš„å®ä¾‹åšåˆå§‹åŒ–ã€‚
+ * ä¸¤ä¸ªè¾“å…¥å‚æ•°çš„å€¼ä¼šè®©å‡½æ•°çŸ¥é“è‡ªèº«æ˜¯åœ¨ä»€ä¹ˆæƒ…å†µä¸‹è¢«è°ƒç”¨çš„ï¼š
+ *		å…¥åŒ…ï¼šskbä¸ä¸ºNULLï¼Œoptä¸ºNULLã€‚
+ * 		åŒ…æ­£è¢«ä¼ è¾“ï¼šskbä¸ºNULLï¼Œoptéç©ºã€‚
  */
 int ip_options_compile(struct ip_options * opt, struct sk_buff * skb)
 {
@@ -271,41 +271,41 @@ int ip_options_compile(struct ip_options * opt, struct sk_buff * skb)
 	struct rtable *rt = skb ? (struct rtable*)skb->dst : NULL;
 
 	/**
-	 * optÎª¿Õ£¬ËµÃ÷ÊÇÈë°ü¡£
+	 * optä¸ºç©ºï¼Œè¯´æ˜æ˜¯å…¥åŒ…ã€‚
 	 */
 	if (!opt) {
 		opt = &(IPCB(skb)->opt);
 		memset(opt, 0, sizeof(struct ip_options));
 		/**
-		 * ´ÓÈë°üÖĞÈ¡IPÍ·¡£
+		 * ä»å…¥åŒ…ä¸­å–IPå¤´ã€‚
 		 */
 		iph = skb->nh.raw;
 		opt->optlen = ((struct iphdr *)iph)->ihl*4 - sizeof(struct iphdr);
 		/**
-		 * Ñ¡ÏîÆğÊ¼µØÖ·¡£¡£
+		 * é€‰é¡¹èµ·å§‹åœ°å€ã€‚ã€‚
 		 */
 		optptr = iph + sizeof(struct iphdr);
 		opt->is_data = 0;
 	} else {
 		/**
-		 * ´ÓoptÖĞÈ¡³öÑ¡ÏîÆğÊ¼µØÖ·ºÍ°üÍ·¡£
+		 * ä»optä¸­å–å‡ºé€‰é¡¹èµ·å§‹åœ°å€å’ŒåŒ…å¤´ã€‚
 		 */
 		optptr = opt->is_data ? opt->__data : (unsigned char*)&(skb->nh.iph[1]);
 		iph = optptr - sizeof(struct iphdr);
 	}
 
 	/**
-	 * ±éÀú´¦ÀíÑ¡Ïî¡£
-	 *		L±íÊ¾ÈÔÈ»Ã»ÓĞ±»½âÎöµÄ¿éµÄ³¤¶È¡£
-	 *		OptptrÖ¸ÕëÖ¸ÏòÒÑ¾­±»½âÎöÁËµÄÑ¡Ïî¿éµÄµ±Ç°µØÖ·¡£Optptr[1]ÊÇÑ¡ÏîµÄ³¤¶È£¬optptr[2]ÊÇÑ¡ÏîÖ¸Õë£¨Ñ¡Ïî¿ªÊ¼µÄµØ·½£©¡£
-	 * 		Optlen±»³õÊ¼»¯Îªµ±Ç°Ñ¡ÏîµÄ³¤¶È¡£
-	 * 		Is_changed±êÖ¾ÓÃÀ´±£´æµ±±¨Í·ÊÇ·ñÒÑ¾­±»ĞŞ¸Ä£¨ÕâĞèÒªÖØĞÂ¼ÆËãĞ£ÑéºÍ£©¡£
+	 * éå†å¤„ç†é€‰é¡¹ã€‚
+	 *		Lè¡¨ç¤ºä»ç„¶æ²¡æœ‰è¢«è§£æçš„å—çš„é•¿åº¦ã€‚
+	 *		OptptræŒ‡é’ˆæŒ‡å‘å·²ç»è¢«è§£æäº†çš„é€‰é¡¹å—çš„å½“å‰åœ°å€ã€‚Optptr[1]æ˜¯é€‰é¡¹çš„é•¿åº¦ï¼Œoptptr[2]æ˜¯é€‰é¡¹æŒ‡é’ˆï¼ˆé€‰é¡¹å¼€å§‹çš„åœ°æ–¹ï¼‰ã€‚
+	 * 		Optlenè¢«åˆå§‹åŒ–ä¸ºå½“å‰é€‰é¡¹çš„é•¿åº¦ã€‚
+	 * 		Is_changedæ ‡å¿—ç”¨æ¥ä¿å­˜å½“æŠ¥å¤´æ˜¯å¦å·²ç»è¢«ä¿®æ”¹ï¼ˆè¿™éœ€è¦é‡æ–°è®¡ç®—æ ¡éªŒå’Œï¼‰ã€‚
 	 */
 	for (l = opt->optlen; l > 0; ) {
 		switch (*optptr) {
 		      case IPOPT_END:
 			/**
-			 * ÔÚIPOPT_ENDÑ¡Ïîºó£¬²»ÄÜÔÙÓĞÆäËûÑ¡Ïî¡£Òò´Ë£¬Ò»µ©ÕÒµ½Ò»¸öÕâÑùµÄÑ¡Ïî£¬²»¹ÜÆäºóÊÇÊ²Ã´Ñ¡Ïî£¬¶¼±»¸²¸ÇÎªIPOPT_END¡£
+			 * åœ¨IPOPT_ENDé€‰é¡¹åï¼Œä¸èƒ½å†æœ‰å…¶ä»–é€‰é¡¹ã€‚å› æ­¤ï¼Œä¸€æ—¦æ‰¾åˆ°ä¸€ä¸ªè¿™æ ·çš„é€‰é¡¹ï¼Œä¸ç®¡å…¶åæ˜¯ä»€ä¹ˆé€‰é¡¹ï¼Œéƒ½è¢«è¦†ç›–ä¸ºIPOPT_ENDã€‚
 			 */
 			for (optptr++, l--; l>0; optptr++, l--) {
 				if (*optptr != IPOPT_END) {
@@ -315,7 +315,7 @@ int ip_options_compile(struct ip_options * opt, struct sk_buff * skb)
 			}
 			goto eol;
 			/**
-			 * IPOPT_NOOPÓÃÓÚÕ¼Î»£¬Ö±½ÓÂÔ¹ı¡£
+			 * IPOPT_NOOPç”¨äºå ä½ï¼Œç›´æ¥ç•¥è¿‡ã€‚
 			 */
 		      case IPOPT_NOOP:
 			l--;
@@ -323,11 +323,11 @@ int ip_options_compile(struct ip_options * opt, struct sk_buff * skb)
 			continue;
 		}
 		/**
-		 * ÒÔÏÂ´¦Àí¶à×Ö½ÚÑ¡Ïî¡£
+		 * ä»¥ä¸‹å¤„ç†å¤šå­—èŠ‚é€‰é¡¹ã€‚
 		 */
 		optlen = optptr[1];
 		/**
-		 * ÓÉÓÚÃ¿Ò»¸öÑ¡ÏîµÄ³¤¶È°üº¬ÁË×îÇ°ÃæµÄÁ½¸ö×Ö½Ú£¨typeºÍlength£©£¬²¢ÇÒËü´Ó1¿ªÊ¼¼ÆÊı£¨²»ÊÇ0£©£¬Èç¹ûlengthĞ¡ÓÚ2»òÕß´óÓÚÒÑ¾­±»·ÖÎöµÄÑ¡Ïî¿é¾Í±íÊ¾Ò»¸ö´íÎó
+		 * ç”±äºæ¯ä¸€ä¸ªé€‰é¡¹çš„é•¿åº¦åŒ…å«äº†æœ€å‰é¢çš„ä¸¤ä¸ªå­—èŠ‚ï¼ˆtypeå’Œlengthï¼‰ï¼Œå¹¶ä¸”å®ƒä»1å¼€å§‹è®¡æ•°ï¼ˆä¸æ˜¯0ï¼‰ï¼Œå¦‚æœlengthå°äº2æˆ–è€…å¤§äºå·²ç»è¢«åˆ†æçš„é€‰é¡¹å—å°±è¡¨ç¤ºä¸€ä¸ªé”™è¯¯
 		 */
 		if (optlen<2 || optlen>l) {
 			pp_ptr = optptr;
@@ -335,20 +335,20 @@ int ip_options_compile(struct ip_options * opt, struct sk_buff * skb)
 		}
 		switch (*optptr) {
 			/**
-			 * ÑÏ¸ñºÍ¿íËÉµÄÔ´Â·ÓÉÑ¡Ïî¡£
+			 * ä¸¥æ ¼å’Œå®½æ¾çš„æºè·¯ç”±é€‰é¡¹ã€‚
 			 */
 		      case IPOPT_SSRR:
 		      case IPOPT_LSRR:
 			/**
-			 * Èç¹ûÑ¡Ïî³¤¶È£¨°üº¬typeºÍlength£©Ğ¡ÓÚ3£¬ÄÇÃ´¸ÃÑ¡Ïî½«±»ÊÓÎª´íÎóÑ¡Ïî¡£
-			 * ÕâÊÇÒòÎª¸ÃÖµÒÑ¾­°üº¬ÁËtype¡¢lengthºÍpointer×Ö¶Î¡£
+			 * å¦‚æœé€‰é¡¹é•¿åº¦ï¼ˆåŒ…å«typeå’Œlengthï¼‰å°äº3ï¼Œé‚£ä¹ˆè¯¥é€‰é¡¹å°†è¢«è§†ä¸ºé”™è¯¯é€‰é¡¹ã€‚
+			 * è¿™æ˜¯å› ä¸ºè¯¥å€¼å·²ç»åŒ…å«äº†typeã€lengthå’Œpointerå­—æ®µã€‚
 			 */
 			if (optlen < 3) {
 				pp_ptr = optptr + 1;
 				goto error;
 			}
 			/**
-			 * Í¬Ê±£¬pointer²»ÄÜ±È4Ğ¡£¬ÒòÎªµÚÒ»¸ö3×Ö½ÚµÄÑ¡ÏîÒÑ¾­±»type¡¢length¡¢pionter×Ö¶ÎÊ¹ÓÃ¡£
+			 * åŒæ—¶ï¼Œpointerä¸èƒ½æ¯”4å°ï¼Œå› ä¸ºç¬¬ä¸€ä¸ª3å­—èŠ‚çš„é€‰é¡¹å·²ç»è¢«typeã€lengthã€pionterå­—æ®µä½¿ç”¨ã€‚
 			 */
 			if (optptr[2] < 4) {
 				pp_ptr = optptr + 2;
@@ -356,15 +356,15 @@ int ip_options_compile(struct ip_options * opt, struct sk_buff * skb)
 			}
 			/* NB: cf RFC-1812 5.2.4.1 */
 			/**
-			 * Ç°ÏÖµÄ½âÎöÖĞÒÑ¾­Ò»¸öÔ´Â·ÓÉÑ¡ÏîÁË¡£
-			 * ÓÉÓÚÑÏ¸ñºÍ¿íËÉÔ´Â·ÓÉ²»ÄÜÍ¬Ê±²¢´æ£¬Òò´ËÌøµ½´íÎó´¦Àí¡£
+			 * å‰ç°çš„è§£æä¸­å·²ç»ä¸€ä¸ªæºè·¯ç”±é€‰é¡¹äº†ã€‚
+			 * ç”±äºä¸¥æ ¼å’Œå®½æ¾æºè·¯ç”±ä¸èƒ½åŒæ—¶å¹¶å­˜ï¼Œå› æ­¤è·³åˆ°é”™è¯¯å¤„ç†ã€‚
 			 */
 			if (opt->srr) {
 				pp_ptr = optptr;
 				goto error;
 			}
 			/**
-			 * µ±ÊäÈëµÄskb²ÎÊıÊÇNULLÊ±£¬±íÊ¾ip_options_compile±»µ÷ÓÃÒÔ½âÎöÒ»¸ö³ö°üµÄÑ¡Ïî£¨ÓÉ±¾µØÉú³É¶ø²»ÊÇ×ª·¢£©¡£
+			 * å½“è¾“å…¥çš„skbå‚æ•°æ˜¯NULLæ—¶ï¼Œè¡¨ç¤ºip_options_compileè¢«è°ƒç”¨ä»¥è§£æä¸€ä¸ªå‡ºåŒ…çš„é€‰é¡¹ï¼ˆç”±æœ¬åœ°ç”Ÿæˆè€Œä¸æ˜¯è½¬å‘ï¼‰ã€‚
 			 */
 			if (!skb) {
 				if (optptr[2] != 4 || optlen < 7 || ((optlen-3) & 3)) {
@@ -372,447 +372,42 @@ int ip_options_compile(struct ip_options * opt, struct sk_buff * skb)
 					goto error;
 				}
 				/**
-				 * ÔÚÕâÖÖÇé¿öÏÂ£¬ÓÉÓÃ»§¿Õ¼äÌá¹©µÄµØÖ·Êı×éÖĞµÄµÚÒ»¸öIPµØÖ·±»±£´æÔÚopt->faddr£¬È»ºóÒÔmemmoveÔËËã°ÑÊı×éµÄÆäËûÔªËØÍù»ØÒÆ¶¯Ò»¸öÎ»ÖÃ£¬½«¸ÃµØÖ·´ÓÊı×éÖĞÉ¾³ı¡£
-				 * Õâ¸öµØÖ·Ëæºó½«±»ip_queue_xmitº¯ÊıÈ¡³ö£¬ÕâÑù£¬ÄÇĞ©º¯Êı²ÅÖªµÀÄ¿µÄIPµØÖ·¡£Ê¹ÓÃopt->faddrµÄ¼òµ¥µÄÀı×Ó¿ÉÒÔÔÚudp_sendmsgÖĞÕÒµ½¡£
+				 * åœ¨è¿™ç§æƒ…å†µä¸‹ï¼Œç”±ç”¨æˆ·ç©ºé—´æä¾›çš„åœ°å€æ•°ç»„ä¸­çš„ç¬¬ä¸€ä¸ªIPåœ°å€è¢«ä¿å­˜åœ¨opt->faddrï¼Œç„¶åä»¥memmoveè¿ç®—æŠŠæ•°ç»„çš„å…¶ä»–å…ƒç´ å¾€å›ç§»åŠ¨ä¸€ä¸ªä½ç½®ï¼Œå°†è¯¥åœ°å€ä»æ•°ç»„ä¸­åˆ é™¤ã€‚
+				 * è¿™ä¸ªåœ°å€éšåå°†è¢«ip_queue_xmitå‡½æ•°å–å‡ºï¼Œè¿™æ ·ï¼Œé‚£äº›å‡½æ•°æ‰çŸ¥é“ç›®çš„IPåœ°å€ã€‚ä½¿ç”¨opt->faddrçš„ç®€å•çš„ä¾‹å­å¯ä»¥åœ¨udp_sendmsgä¸­æ‰¾åˆ°ã€‚
 				 */
 				memcpy(&opt->faddr, &optptr[3], 4);
 				if (optlen > 7)
 					memmove(&optptr[3], &optptr[7], optlen-7);
 			}
 			/**
-			 * opt->is_strictroute±»ÓÃÀ´¸æËßµ÷ÓÃÕß£ºÔ´Â·ÓÉÑ¡ÏîÊÇ·ñÊÇÒ»¸öÑÏ¸ñ¡¢¿íËÉÂ·ÓÉ¡£
+			 * opt->is_strictrouteè¢«ç”¨æ¥å‘Šè¯‰è°ƒç”¨è€…ï¼šæºè·¯ç”±é€‰é¡¹æ˜¯å¦æ˜¯ä¸€ä¸ªä¸¥æ ¼ã€å®½æ¾è·¯ç”±ã€‚
 			 */
 			opt->is_strictroute = (optptr[0] == IPOPT_SSRR);
 			opt->srr = optptr - iph;
 			break;
 			/**
-			 * ¼ÇÂ¼Â·ÓÉÑ¡Ïî¡£
+			 * è®°å½•è·¯ç”±é€‰é¡¹ã€‚
 			 */
 		      case IPOPT_RR:
 			/**
-			 * ÖØ¸´Ñ¡Ïî£¬´íÎó¡£
+			 * é‡å¤é€‰é¡¹ï¼Œé”™è¯¯ã€‚
 			 */
 			if (opt->rr) {
 				pp_ptr = optptr;
 				goto error;
 			}
 			/**
-			 * ³¤¶È·Ç·¨¡£
+			 * é•¿åº¦éæ³•ã€‚
 			 */
 			if (optlen < 3) {
 				pp_ptr = optptr + 1;
 				goto error;
 			}
 			/**
-			 * pointer·Ç·¨¡£
+			 * pointeréæ³•ã€‚
 			 */
 			if (optptr[2] < 4) {
 				pp_ptr = optptr + 2;
 				goto error;
 			}
-			/*å*
-			 * µ±Ç°Ö¸ÕëĞ¡ÓÚIPÑ¡Ïî×Ü³¤£¬IP±¨Í·ÖĞ»¹ÓĞ¿Õ¼ä¼ÇÂ¼Â·ÓÉ¡£ 
-			 */
-			if (optptr[2] <= optlen) {
-				/**
-				 * ¿Õ¼ä²»×ãÒÔ´æ´¢Ò»¸öµØÖ·ÁË¡£´íÎó¡£
-				 */
-				if (optptr[2]+3 > optlen) {
-					pp_ptr = optptr + 2;
-					goto error;
-				}
-				/**
-				 * ´¦ÀíÈë°ü¡£
-				 */
-				if (skb) {
-					/**
-					 * °ÑÊ×Ñ¡Ô´IPµØÖ·¿½±´µ½±¨Í·ÖĞµÄµØÖ·ÁĞ±í£¬È»ºó¸üĞÂ±êÖ¾is_changedÀ´Ç¿ÆÈ¸üĞÂIPĞ£ÑéºÍ¡£
-					 */
-					memcpy(&optptr[optptr[2]-1], &rt->rt_spec_dst, 4);
-					opt->is_changed = 1;
-				}
-				/**
-				 * ÎŞÂÛÈçºÎ£¬¸ÃÑ¡ÏîµÄpointer×Ö¶Î¶¼»áÍùÇ°ÒÆ4¸ö½Ú£¨IPµØÖ·µÄ³ß´ç£©¡£
-				 * Õâ¾ÍËµÃ÷ÁËÎªÊ²Ã´ip_forward_optionsÒªÍù»Ø×ß4¸ö×Ö½Ú£¬ÒÔ°ÑIPĞ´ÈëÕıÈ·µÄµØÖ·¡£ÒòÎªip_forward_options»á¸ù¾İrr_needaddrĞ´ÈëIPµØÖ·¡£
-				 */
-				optptr[2] += 4;
-				/**
-				 * Éè¶¨rr_needaddr±êÖ¾£¬ÒÔÍ¨ÖªÂ·ÓÉ×ÓÏµÍ³£¬µ±×ö³öÂ·ÓÉ¾ö²ßºó£¬°ÑÍâ³ö½Ó¿ÚµÄIPµØÖ·Ğ´ÈëIP±¨Í·¡£
-				 */
-				opt->rr_needaddr = 1;
-			}
-			opt->rr = optptr - iph;
-			break;
-			/**
-			 * TimestampÑ¡Ïî
-			 */
-		      case IPOPT_TIMESTAMP:
-			/**
-			 * ÖØ¸´Ñ¡Ïî¡£
-			 */
-			if (opt->ts) {
-				pp_ptr = optptr;
-				goto error;
-			}
-			/**
-			 * ³¤¶È·Ç·¨¡£
-			 */
-			if (optlen < 4) {
-				pp_ptr = optptr + 1;
-				goto error;
-			}
-			/**
-			 * pointer·Ç·¨¡£
-			 */
-			if (optptr[2] < 5) {
-				pp_ptr = optptr + 2;
-				goto error;
-			}
-			/**
-			 * »¹ÔÚ¿Õ¼äÓÃÓÚ±£´æÊ±¼ä´Á¡£
-			 */
-			if (optptr[2] <= optlen) {
-				__u32 * timeptr = NULL;
-				/**
-				 * Ê£Óà¿Õ¼ä²»×ãÒÔ±£´æÊ±¼ä´Á¡£
-				 */
-				if (optptr[2]+3 > optptr[1]) {
-					pp_ptr = optptr + 2;
-					goto error;
-				}
-				/**
-				 * ´¦Àísubtype×Ö¶Î
-				 */
-				switch (optptr[3]&0xF) {
-				      case IPOPT_TS_TSONLY:
-					opt->ts = optptr - iph;
-					/**
-					 * ½öµ±skb²»ÎªNULLÊ±£¨µ±¸ÃÑ¡ÏîÊôÓÚÄ³¸öÈë°üÊ±£©£¬timeptr²Å»á³õÊ¼»¯¡£
-					 */
-					if (skb) 
-						/**
-						 * TS_ONLYºÍTS_TSANDADDR±ØĞë¼ÇÂ¼Ê±¼ä´Á.
-						 * TimeptrµÄ³õÊ¼ÖµÉèÖÃ³ÉÓ¦¸ÃĞ´Èëµ½IP±¨Í·ÖĞµÄÕıÈ·µØµã¡£
-						 */
-						timeptr = (__u32*)&optptr[optptr[2]-1];
-					/**
-					 * ts_needtimeÎª1£¬¶Ô³ö°üÀ´Ëµ£¬ip_options_build»á¸ù¾İÕâ¸ö±êÖ¾ÉèÖÃÊ±¼ä´Á
-					 */
-					opt->ts_needtime = 1;
-					optptr[2] += 4;
-					break;
-				      case IPOPT_TS_TSANDADDR:
-					if (optptr[2]+7 > optptr[1]) {
-						pp_ptr = optptr + 2;
-						goto error;
-					}
-					opt->ts = optptr - iph;
-					/**
-					 * ½öµ±skb²»ÎªNULLÊ±£¨µ±¸ÃÑ¡ÏîÊôÓÚÄ³¸öÈë°üÊ±£©£¬timeptr²Å»á³õÊ¼»¯¡£
-					 */
-					if (skb) {
-						/**
-						 * Ğ´ÈëµØÖ·¡£
-						 */
-						memcpy(&optptr[optptr[2]-1], &rt->rt_spec_dst, 4);
-						/**
-						 * TS_ONLYºÍTS_TSANDADDR±ØĞë¼ÇÂ¼Ê±¼ä´Á.
-						 * TimeptrµÄ³õÊ¼ÖµÉèÖÃ³ÉÓ¦¸ÃĞ´Èëµ½IP±¨Í·ÖĞµÄÕıÈ·µØµã¡£
-						 */						
-						timeptr = (__u32*)&optptr[optptr[2]+3];
-					}
-					opt->ts_needaddr = 1;
-					/**
-					 * ts_needtimeÎª1£¬¶Ô³ö°üÀ´Ëµ£¬ip_options_build»á¸ù¾İÕâ¸ö±êÖ¾ÉèÖÃÊ±¼ä´Á
-					 */
-					opt->ts_needtime = 1;
-					optptr[2] += 8;
-					break;
-					  /**
-					   * µ±×Ó´úÂëÎªIPOPT_TS_PRESPECÊ±£¬Ö»ÓĞµ±ÏÂÒ»¸öÒª±È¶ÔµÄIPµØÖ·ÊÇÏµÍ³±¾µØµØÖ·Ê±£¬Ê±¼ä´Á²Å»á¼Ó½øÈ¥
-					   */
-				      case IPOPT_TS_PRESPEC:
-					if (optptr[2]+7 > optptr[1]) {
-						pp_ptr = optptr + 2;
-						goto error;
-					}
-					opt->ts = optptr - iph;
-					{
-						u32 addr;
-						memcpy(&addr, &optptr[optptr[2]-1], 4);
-						/** 
-						 * ¸ù¾İÂ·ÓÉ±í£¬¸ÃIPµØÖ·¿ÉÒÔµÖ´ï£¬¶øÇÒÊÇµ¥²¥µØÖ·¡£
-						 * Òò´Ë£¬±¾»ú²»ÓÃ¼ÆËãÊ±¼ä´Á¡£
-						 */
-						if (inet_addr_type(addr) == RTN_UNICAST)
-							break;
-						/**
-						 * ¶ÔÈë°üÀ´Ëµ£¬²ÅĞèÒªÔÚ±¾º¯Êı¼ÇÂ¼Ê±¼ä´Á¡£
-						 */
-						if (skb)
-							timeptr = (__u32*)&optptr[optptr[2]+3];
-					}
-					/**
-					 * ts_needtimeÎª1£¬¶Ô³ö°üÀ´Ëµ£¬ip_options_build»á¸ù¾İÕâ¸ö±êÖ¾ÉèÖÃÊ±¼ä´Á
-					 */					
-					opt->ts_needtime = 1;
-					optptr[2] += 8;
-					break;
-				      default:
-					if (!skb && !capable(CAP_NET_RAW)) {
-						pp_ptr = optptr + 3;
-						goto error;
-					}
-					break;
-				}
-				/**
-				 * È¡¾öÓÚÕıÔÚ´¦ÀíµÄ×ÓÑ¡Ïî£¬Ê±¼ä´Á±ØĞëĞ´ÈëIP±¨Í·ÖĞµÄ²»Í¬Æ«ÒÆÁ¿´¦¡£Ç°ÃæÊÇ¸ù¾İÇé¿ö¶Ôtimeptr³õÊ¼»¯¡£
-				 * ÏÖÔÚÊÇ°ÑÊ±¼ä´Á¿½±´µ½ÕıÈ·Î»ÖÃ¡£¸ù¾İ×ÓÑ¡Ïî¶ø¶¨£¬ts_needtimeºÍtr_needaddrÒ²»á±»³õÊ¼»¯¡£
-				 */
-				if (timeptr) {
-					struct timeval tv;
-					__u32  midtime;
-					do_gettimeofday(&tv);
-					midtime = htonl((tv.tv_sec % 86400) * 1000 + tv.tv_usec / 1000);
-					memcpy(timeptr, &midtime, sizeof(__u32));
-					/**
-					 * ¶ÔÈë°üÀ´Ëµ£¬timeptr²»ÎªNULL£¬ÕâÀïÉèÖÃĞŞ¸Ä±êÖ¾£¬ÕâÑù£¬¾Í»áÖØĞÂ¼ÆËãĞ£ÑéºÍÁË¡£
-					 * ÒòÎªÕâÖÖÇé¿öÏÂ£¬±¨Í·ÒÑ¾­·¢ÉúÁË±ä»¯¡£
-					 */
-					opt->is_changed = 1;
-				}
-			} else {/* ÕâÒ»²¿·ÖÊÇ´¦ÀíÊ±¼ä´Á¿Õ¼ä²»×ãµÄÒç³ö */
-				unsigned overflow = optptr[3]>>4;
-				if (overflow == 15) {
-					pp_ptr = optptr + 3;
-					goto error;
-				}
-				opt->ts = optptr - iph;
-				if (skb) {
-					optptr[3] = (optptr[3]&0xF)|((overflow+1)<<4);
-					opt->is_changed = 1;
-				}
-			}
-			break;
-		      case IPOPT_RA:
-			if (optlen < 4) {
-				pp_ptr = optptr + 1;
-				goto error;
-			}
-			/**
-			 * Router AlertÑ¡ÏîµÄ×îºóÁ½¸ö×Ö½Ú±ØĞëÎª0.
-			 */
-			if (optptr[2] == 0 && optptr[3] == 0)
-				/**
-				 * ÉèÖÃrouter_alert¹©ip_forward´¦Àí¡£
-				 */
-				opt->router_alert = optptr - iph;
-			break;
-		      case IPOPT_SEC:
-		      case IPOPT_SID:
-		      default:
-			if (!skb && !capable(CAP_NET_RAW)) {
-				pp_ptr = optptr;
-				goto error;
-			}
-			break;
-		}
-		l -= optlen;
-		optptr += optlen;
-	}
-
-eol:
-	if (!pp_ptr)
-		return 0;
-
-/**
- * ÔËĞĞµ½´Ë£¬ËµÃ÷±¨Í·ÖĞÓĞ´íÎó·¢Éú¡£
- */
-error:
-	/**
-	 * Èç¹ûÊÇÈë°ü£¬ÔòÏò¶Ô·½·¢ËÍICMPÏûÏ¢¡£
-	 */
-	if (skb) {
-		icmp_send(skb, ICMP_PARAMETERPROB, 0, htonl((pp_ptr-iph)<<24));
-	}
-	return -EINVAL;
-}
-
-
-/*
- *	Undo all the changes done by ip_options_compile().
- */
-
-void ip_options_undo(struct ip_options * opt)
-{
-	if (opt->srr) {
-		unsigned  char * optptr = opt->__data+opt->srr-sizeof(struct  iphdr);
-		memmove(optptr+7, optptr+3, optptr[1]-7);
-		memcpy(optptr+3, &opt->faddr, 4);
-	}
-	if (opt->rr_needaddr) {
-		unsigned  char * optptr = opt->__data+opt->rr-sizeof(struct  iphdr);
-		optptr[2] -= 4;
-		memset(&optptr[optptr[2]-1], 0, 4);
-	}
-	if (opt->ts) {
-		unsigned  char * optptr = opt->__data+opt->ts-sizeof(struct  iphdr);
-		if (opt->ts_needtime) {
-			optptr[2] -= 4;
-			memset(&optptr[optptr[2]-1], 0, 4);
-			if ((optptr[3]&0xF) == IPOPT_TS_PRESPEC)
-				optptr[2] -= 4;
-		}
-		if (opt->ts_needaddr) {
-			optptr[2] -= 4;
-			memset(&optptr[optptr[2]-1], 0, 4);
-		}
-	}
-}
-
-/**
- * ´Ëº¯Êı»á½ÓÊÕÒ»ÈºÑ¡Ïî£¬ÓÃip_options_compile½âÎö£¬È»ºó°Ñ½á¹û´æ´¢ÔÚÆä·ÖÅäµÄÒ»¸öip_optioins½á¹¹¡£´Ëº¯ÊıÒ²¿É´ÓÄÚºË¿Õ¼ä»òÓÃ»§¿Õ¼ä½ÓÊÕÊäÈëÑ¡Ïî
- */
-int ip_options_get(struct ip_options **optp, unsigned char *data, int optlen, int user)
-{
-	struct ip_options *opt;
-
-	opt = kmalloc(sizeof(struct ip_options)+((optlen+3)&~3), GFP_KERNEL);
-	if (!opt)
-		return -ENOMEM;
-	memset(opt, 0, sizeof(struct ip_options));
-	if (optlen) {
-		if (user) {
-			if (copy_from_user(opt->__data, data, optlen)) {
-				kfree(opt);
-				return -EFAULT;
-			}
-		} else
-			memcpy(opt->__data, data, optlen);
-	}
-	while (optlen & 3)
-		opt->__data[optlen++] = IPOPT_END;
-	opt->optlen = optlen;
-	opt->is_data = 1;
-	opt->is_setbyuser = 1;
-	if (optlen && ip_options_compile(opt, NULL)) {
-		kfree(opt);
-		return -EINVAL;
-	}
-	if (*optp)
-		kfree(*optp);
-	*optp = opt;
-	return 0;
-}
-
-/**
- * ×ª·¢Ò»¸ö°üÊ±£¬ÓĞĞ©Ñ¡Ïî¿ÉÄÜ±ØĞë±»´¦Àí¡£
- * Ip_options_compile»á½âÎöÒ»Ğ©Ñ¡Ïî£¬È»ºó¶ÔÓÃÓÚ´æ´¢½âÎö½á¹ûµÄip_options½á¹¹µÄÒ»×é±êÖ¾×ö³õÊ¼»¯¡£
- */
-void ip_forward_options(struct sk_buff *skb)
-{
-	struct   ip_options * opt	= &(IPCB(skb)->opt);
-	unsigned char * optptr;
-	struct rtable *rt = (struct rtable*)skb->dst;
-	unsigned char *raw = skb->nh.raw;
-
-	if (opt->rr_needaddr) {
-		optptr = (unsigned char *)raw + opt->rr;
-		ip_rt_get_source(&optptr[optptr[2]-5], rt);
-		opt->is_changed = 1;
-	}
-	if (opt->srr_is_hit) {
-		int srrptr, srrspace;
-
-		optptr = raw + opt->srr;
-
-		for ( srrptr=optptr[2], srrspace = optptr[1];
-		     srrptr <= srrspace;
-		     srrptr += 4
-		     ) {
-			if (srrptr + 3 > srrspace)
-				break;
-			if (memcmp(&rt->rt_dst, &optptr[srrptr-1], 4) == 0)
-				break;
-		}
-		if (srrptr + 3 <= srrspace) {
-			opt->is_changed = 1;
-			ip_rt_get_source(&optptr[srrptr-1], rt);
-			skb->nh.iph->daddr = rt->rt_dst;
-			optptr[2] = srrptr+4;
-		} else if (net_ratelimit())
-			printk(KERN_CRIT "ip_forward(): Argh! Destination lost!\n");
-		if (opt->ts_needaddr) {
-			optptr = raw + opt->ts;
-			ip_rt_get_source(&optptr[optptr[2]-9], rt);
-			opt->is_changed = 1;
-		}
-	}
-	if (opt->is_changed) {
-		opt->is_changed = 0;
-		ip_send_check(skb->nh.iph);
-	}
-}
-
-/**
- * ´¦Àí»ùÓÚÔ´Õ¾Ñ°Â·¡£
- * ´ÓIPÍ·²¿ÌáÈ¡³öÒªÊ¹ÓÃµÄÏÂÒ»Ìø£¬²¢µ÷ÓÃip_route_inputÀ´½øĞĞµÚ¶ş´ÎÂ·ÓÉ²éÕÒ¡£
- * µÚ¶ş´ÎÂ·ÓÉ²éÕÒÊ¹ÓÃ¸üĞÂµÄ²éÕÒ½á¹û¸²¸ÇÔ­À´µÄskb->dst¡£
- */
-int ip_options_rcv_srr(struct sk_buff *skb)
-{
-	struct ip_options *opt = &(IPCB(skb)->opt);
-	int srrspace, srrptr;
-	u32 nexthop;
-	struct iphdr *iph = skb->nh.iph;
-	unsigned char * optptr = skb->nh.raw + opt->srr;
-	struct rtable *rt = (struct rtable*)skb->dst;
-	struct rtable *rt2;
-	int err;
-
-	if (!opt->srr)
-		return 0;
-
-	if (skb->pkt_type != PACKET_HOST)
-		return -EINVAL;
-	if (rt->rt_type == RTN_UNICAST) {
-		if (!opt->is_strictroute)
-			return 0;
-		icmp_send(skb, ICMP_PARAMETERPROB, 0, htonl(16<<24));
-		return -EINVAL;
-	}
-	if (rt->rt_type != RTN_LOCAL)
-		return -EINVAL;
-
-	for (srrptr=optptr[2], srrspace = optptr[1]; srrptr <= srrspace; srrptr += 4) {
-		if (srrptr + 3 > srrspace) {
-			icmp_send(skb, ICMP_PARAMETERPROB, 0, htonl((opt->srr+2)<<24));
-			return -EINVAL;
-		}
-		memcpy(&nexthop, &optptr[srrptr-1], 4);
-
-		rt = (struct rtable*)skb->dst;
-		skb->dst = NULL;
-		err = ip_route_input(skb, nexthop, iph->saddr, iph->tos, skb->dev);
-		rt2 = (struct rtable*)skb->dst;
-		if (err || (rt2->rt_type != RTN_UNICAST && rt2->rt_type != RTN_LOCAL)) {
-			ip_rt_put(rt2);
-			skb->dst = &rt->u.dst;
-			return -EINVAL;
-		}
-		ip_rt_put(rt);
-		if (rt2->rt_type != RTN_LOCAL)
-			break;
-		/* Superfast 8) loopback forward */
-		memcpy(&iph->daddr, &optptr[srrptr-1], 4);
-		opt->is_changed = 1;
-	}
-	if (srrptr <= srrspace) {
-		opt->srr_is_hit = 1;
-		opt->is_changed = 1;
-	}
-	return 0;
-}
-
-EXPORT_SYMBOL(ip_options_compile);
-EXPORT_SYMBOL(ip_options_undo);
+			/*

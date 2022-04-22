@@ -17,7 +17,7 @@ Features:
 List of features supported by this driver:
 - full-duplex support
 - supported audio formats: unsigned 8bit, signed 16bit little endian, 
-                           signed 16bit big endian, µ-law, A-law
+                           signed 16bit big endian, Âµ-law, A-law
 - supported channels: mono and stereo
 - supported recording sources: Master, CD, Line, Line1, Line2, Mic
 - supports phat 3d stereo circuit (Line 3)

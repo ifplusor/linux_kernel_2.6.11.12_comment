@@ -13,7 +13,7 @@
  */
 
 /*
- * Copyright 2003 Jos�Fonseca.
+ * Copyright 2003 José Fonseca.
  * Copyright 2003 Leif Delgass.
  * All Rights Reserved.
  *

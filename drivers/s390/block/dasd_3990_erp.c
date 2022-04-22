@@ -41,7 +41,7 @@ struct DCTL_data {
  *
  *   Each bit configuration leading to an action code 2 (Exit with
  *   programming error or unusual condition indication)
- *   are handled as fatal error´s.
+ *   are handled as fatal errorÂ´s.
  * 
  *   All other configurations are handled as recoverable errors.
  *

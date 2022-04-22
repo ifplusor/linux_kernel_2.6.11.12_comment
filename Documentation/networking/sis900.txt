@@ -5,7 +5,7 @@ Ollie Lho
 
 Lei Chun Chang
 
-   Copyright © 1999 by Silicon Integrated System Corp.
+   Copyright Â© 1999 by Silicon Integrated System Corp.
    
    This document gives some information on installation and usage of SiS
    900/7016 device driver under Linux.

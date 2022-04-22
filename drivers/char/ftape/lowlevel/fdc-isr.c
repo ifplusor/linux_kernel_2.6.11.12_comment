@@ -945,7 +945,7 @@ static void handle_fdc_busy(buffer_struct *buff)
 			/*  cH: 23/02/97: if the last sector in the 
 			 *  segment was a hard error, then there is 
 			 *  no sense in a retry. This occasion seldom
-			 *  occurs but ... @:³²¸`@%&§$
+			 *  occurs but ... @:Â³Â²Â¸`@%&Â§$
 			 */
 			if (retry && skip < 32) {
 				retry_sector(buff, fdc_mode, skip);

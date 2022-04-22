@@ -758,7 +758,7 @@ L:	dri-devel@lists.sourceforge.net
 S:	Supported
 
 DSCC4 DRIVER
-P:	François Romieu
+P:	FranÃ§ois Romieu
 M:	romieu@cogenit.fr
 M:	romieu@ensta.fr
 S:	Maintained
@@ -1764,13 +1764,13 @@ L:	http://lists.infradead.org/mailman/listinfo/linux-pcmcia
 S:	Unmaintained
 
 PCNET32 NETWORK DRIVER
-P:	Thomas Bogendörfer
+P:	Thomas BogendÃ¶rfer
 M:	tsbogend@alpha.franken.de
 L:	linux-net@vger.kernel.org
 S:	Maintained
 
 PHRAM MTD DRIVER
-P:	Jörn Engel
+P:	JÃ¶rn Engel
 M:	joern@wh.fh-wedel.de
 L:	linux-mtd@lists.infradead.org
 S:	Maintained
@@ -1949,7 +1949,7 @@ L:	linux-scsi@vger.kernel.org
 S:	Maintained
 
 SCSI TAPE DRIVER
-P:	Kai Mäkisara
+P:	Kai MÃ¤kisara
 M:	Kai.Makisara@kolumbus.fi
 L:	linux-scsi@vger.kernel.org
 S:	Maintained

@@ -33,7 +33,7 @@ echo platform > /sys/power/disk; echo disk > /sys/power/state
 
 Article about goals and implementation of Software Suspend for Linux
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-Author: G‚ábor Kuti
+Author: GÂ‚Ã¡bor Kuti
 Last revised: 2003-10-20 by Pavel Machek
 
 Idea and goals to achieve

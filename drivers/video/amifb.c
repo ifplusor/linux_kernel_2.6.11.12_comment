@@ -114,7 +114,7 @@
    +----------+---------------------------------------------+----------+-------+
    |          |                ^                            |          |       |
    |          |                |upper_margin                |          |       |
-   |          |                ¥                            |          |       |
+   |          |                Â¥                            |          |       |
    +----------###############################################----------+-------+
    |          #                ^                            #          |       |
    |          #                |                            #          |       |
@@ -135,15 +135,15 @@
    |          #                |                            #          |       |
    |          #                |                            #          |       |
    |          #                |                            #          |       |
-   |          #                ¥                            #          |       |
+   |          #                Â¥                            #          |       |
    +----------###############################################----------+-------+
    |          |                ^                            |          |       |
    |          |                |lower_margin                |          |       |
-   |          |                ¥                            |          |       |
+   |          |                Â¥                            |          |       |
    +----------+---------------------------------------------+----------+-------+
    |          |                ^                            |          |       |
    |          |                |vsync_len                   |          |       |
-   |          |                ¥                            |          |       |
+   |          |                Â¥                            |          |       |
    +----------+---------------------------------------------+----------+-------+
 
 
@@ -327,7 +327,7 @@
    CCIR -> PAL
    -----------
 
-      - a scanline is 64 µs long, of which 52.48 µs are visible. This is about
+      - a scanline is 64 ï¿½s long, of which 52.48 ï¿½s are visible. This is about
         736 visible 70 ns pixels per line.
       - we have 625 scanlines, of which 575 are visible (interlaced); after
         rounding this becomes 576.
@@ -335,7 +335,7 @@
    RETMA -> NTSC
    -------------
 
-      - a scanline is 63.5 µs long, of which 53.5 µs are visible.  This is about
+      - a scanline is 63.5 ï¿½s long, of which 53.5 ï¿½s are visible.  This is about
         736 visible 70 ns pixels per line.
       - we have 525 scanlines, of which 485 are visible (interlaced); after
         rounding this becomes 484.
@@ -802,7 +802,7 @@ static u_short ecs_palette[32];
 
 static u_short do_vmode_full = 0;	/* Change the Video Mode */
 static u_short do_vmode_pan = 0;	/* Update the Video Mode */
-static short do_blank = 0;		/* (Un)Blank the Screen (±1) */
+static short do_blank = 0;		/* (Un)Blank the Screen (ï¿½1) */
 static u_short do_cursor = 0;		/* Move the Cursor */
 
 

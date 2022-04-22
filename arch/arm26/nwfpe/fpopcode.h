@@ -76,11 +76,11 @@ TABLE 1
 +-------------------------+---+---+---------+---------+
 |  Precision              | u | v | FPSR.EP | length  |
 +-------------------------+---+---+---------+---------+
-| Single                  | 0 ü 0 |    x    | 1 words |
-| Double                  | 1 ü 1 |    x    | 2 words |
-| Extended                | 1 ü 1 |    x    | 3 words |
-| Packed decimal          | 1 ü 1 |    0    | 3 words |
-| Expanded packed decimal | 1 ü 1 |    1    | 4 words |
+| Single                  | 0 Ã¼ 0 |    x    | 1 words |
+| Double                  | 1 Ã¼ 1 |    x    | 2 words |
+| Extended                | 1 Ã¼ 1 |    x    | 3 words |
+| Packed decimal          | 1 Ã¼ 1 |    0    | 3 words |
+| Expanded packed decimal | 1 Ã¼ 1 |    1    | 4 words |
 +-------------------------+---+---+---------+---------+
 Note: x = don't care
 */
@@ -90,10 +90,10 @@ TABLE 2
 +---+---+---------------------------------+
 | w | x | Number of registers to transfer |
 +---+---+---------------------------------+
-| 0 ü 1 |  1                              |
-| 1 ü 0 |  2                              |
-| 1 ü 1 |  3                              |
-| 0 ü 0 |  4                              |
+| 0 ï¿½ 1 |  1                              |
+| 1 ï¿½ 0 |  2                              |
+| 1 ï¿½ 1 |  3                              |
+| 0 ï¿½ 0 |  4                              |
 +---+---+---------------------------------+
 */
 
@@ -154,10 +154,10 @@ TABLE 5
 +-------------------------+---+---+
 |  Rounding Precision     | e | f |
 +-------------------------+---+---+
-| IEEE Single precision   | 0 ü 0 |
-| IEEE Double precision   | 0 ü 1 |
-| IEEE Extended precision | 1 ü 0 |
-| undefined (trap)        | 1 ü 1 |
+| IEEE Single precision   | 0 ï¿½ 0 |
+| IEEE Double precision   | 0 ï¿½ 1 |
+| IEEE Extended precision | 1 ï¿½ 0 |
+| undefined (trap)        | 1 ï¿½ 1 |
 +-------------------------+---+---+
 */
 
@@ -166,10 +166,10 @@ TABLE 5
 +---------------------------------+---+---+
 |  Rounding Mode                  | g | h |
 +---------------------------------+---+---+
-| Round to nearest (default)      | 0 ü 0 |
-| Round toward plus infinity      | 0 ü 1 |
-| Round toward negative infinity  | 1 ü 0 |
-| Round toward zero               | 1 ü 1 |
+| Round to nearest (default)      | 0 ï¿½ 0 |
+| Round toward plus infinity      | 0 ï¿½ 1 |
+| Round toward negative infinity  | 1 ï¿½ 0 |
+| Round toward zero               | 1 ï¿½ 1 |
 +---------------------------------+---+---+
 */
 
